@@ -1,9 +1,12 @@
 {
-  "name": "vite-project",
+  "name": "zalo-ute",
+  "homepage": "https://kaytervn.github.io/Realtime-Chat-App-Portal-Web/",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build",
     "start": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
@@ -11,6 +14,7 @@
   },
   "dependencies": {
     "autoprefixer": "^10.4.20",
+    "dayjs": "^1.11.13",
     "lucide-react": "^0.441.0",
     "postcss": "^8.4.47",
     "react": "^18.3.1",
@@ -26,10 +30,14 @@
     "eslint": "^9.9.0",
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.9",
+    "gh-pages": "^6.1.1",
     "globals": "^15.9.0",
     "tailwindcss": "^3.4.11",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
     "vite": "^5.4.1"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "4.17.2"
   }
 }
