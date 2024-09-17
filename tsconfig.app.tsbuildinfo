@@ -1,1 +1,21 @@
-{"root":["./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/components/button.tsx","./src/components/dialog.tsx","./src/components/inputfield.tsx","./src/components/template.tsx","./src/hooks/usedialog.ts","./src/hooks/useform.ts","./src/hooks/useloading.ts","./src/types/constant.ts","./src/types/utils.ts","./src/views/forgotpassword.tsx","./src/views/home.tsx","./src/views/login.tsx","./src/views/register.tsx"],"version":"5.6.2"}
+{
+  "root": [
+    "./src/app.tsx",
+    "./src/main.tsx",
+    "./src/vite-env.d.ts",
+    "./src/components/button.tsx",
+    "./src/components/dialog.tsx",
+    "./src/components/inputfield.tsx",
+    "./src/components/template.tsx",
+    "./src/hooks/usedialog.ts",
+    "./src/hooks/useform.ts",
+    "./src/hooks/useloading.ts",
+    "./src/types/constant.ts",
+    "./src/types/utils.ts",
+    "./src/views/forgotpassword.tsx",
+    "./src/views/home.tsx",
+    "./src/views/login.tsx",
+    "./src/views/register.tsx"
+  ],
+  "version": "5.6.2"
+}
