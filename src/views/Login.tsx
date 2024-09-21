@@ -53,7 +53,7 @@ const Login = () => {
         const data = await response.json();
         await localStorage.setItem("accessToken", data.data.accessToken);
         toast.success("Đăng nhập thành công");
-        navigate("/home")
+        navigate("/home");
       } catch (error: any) {
         toast.error(error.message);
       } finally {
@@ -97,7 +97,17 @@ const Login = () => {
           </a>
         </div>
         <Button title="ĐĂNG NHẬP" color="royalblue" onPress={handleSubmit} />
+        <div className="text-sm mt-4 text-center">
+          <span>Bạn chưa có tài khoản? </span>
+          <a
+            href="/register"
+            className="font-medium text-indigo-600 hover:text-indigo-500"
+          >
+            Đăng ký
+          </a>
+        </div>
       </div>
+
       <LoadingDialog isVisible={isLoading} />
       <ToastContainer />
     </div>
