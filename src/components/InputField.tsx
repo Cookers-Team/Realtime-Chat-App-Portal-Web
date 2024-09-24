@@ -19,7 +19,7 @@ const InputField = ({
 }: any) => {
   return (
     <div className="mb-4">
-      <label className="text-base font-semibold text-gray-800 mb-2 block">
+      <label className="text-base font-semibold text-gray-800 mb-2 block text-left">
         {title}
         {isRequire && <span className="text-red-500">{" *"}</span>}
       </label>
@@ -31,7 +31,7 @@ const InputField = ({
       >
         {Icon && <Icon size={20} color={error ? "#EF4444" : "#6B7280"} />}
         <input
-          className={`flex-1 ml-2 text-base outline-none ${
+          className={`flex-1 ml-2 text-base outline-none  ${
             error ? "text-red-500" : "text-gray-700"
           }`}
           placeholder={placeholder}
@@ -52,7 +52,7 @@ const InputField = ({
           </button>
         )}
       </div>
-      {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+      {error && <p className="text-red-500 text-sm mt-1 text-left">{error}</p>}
       {children}
     </div>
   );
