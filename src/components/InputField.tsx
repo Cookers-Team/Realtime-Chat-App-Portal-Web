@@ -19,7 +19,7 @@ const InputField = ({
 }: any) => {
   return (
     <div className="mb-4">
-      <label className="text-base font-semibold text-gray-800 mb-2 block">
+      <label className="text-base font-semibold text-gray-800 mb-2 block text-left">
         {title}
         {isRequire && <span className="text-red-500">{" *"}</span>}
       </label>
