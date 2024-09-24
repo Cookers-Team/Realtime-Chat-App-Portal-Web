@@ -1,10 +1,7 @@
 import { useState } from "react";
 
 const useForm = (
-  initialValues: any,
-  initialErrors: any,
-  validate: (form: any) => any
-) => {
+initialValues: any, initialErrors: any, validate: (form: any) => any, p0: { displayName: string; birthDate: string; bio: string; avatarUrl: string; }) => {
   const [form, setForm] = useState(initialValues);
   const [errors, setErrors] = useState(initialErrors);
 

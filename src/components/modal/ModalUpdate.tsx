@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Profile } from "../../models/profile/Profile";
 import { ArrowLeft, CalendarIcon, KeyIcon, PenIcon, User, UserIcon } from "lucide-react";
 import Button from "../Button";
@@ -7,6 +7,7 @@ import useForm from "../../hooks/useForm";
 import { useLoading } from "../../hooks/useLoading";
 import { remoteUrl } from "../../types/constant";
 import { toast } from "react-toastify";
+import { formatBirthDate, formatDate, formatDateFormToString } from "../../utils/DateUtils";
 
 interface ModalUpdate {
   isOpen: boolean;
@@ -17,7 +18,7 @@ interface ModalUpdate {
 
 const ModalUpdate: React.FC<ModalUpdate> = ({ isOpen, onClose, profile, onUpdate}) => {
   const { isLoading, showLoading, hideLoading } = useLoading();
-
+   
   const validate = (form: any) => {
     const newErrors: any = {};
     if (!form.displayName.trim()) {
@@ -26,10 +27,21 @@ const ModalUpdate: React.FC<ModalUpdate> = ({ isOpen, onClose, profile, onUpdate
     return newErrors;
   };
   
+  
+
+  const initialForm = {
+    displayName: profile.displayName,
+    birthDate: formatBirthDate(profile.birthDate), // Ensure it's formatted correctly
+    bio: profile.bio,
+    avatarUrl: profile.avatarUrl,
+  };
+
+
   const { form, errors, handleChange, isValidForm } = useForm(
-    { displayName: "", birthDate: "", bio: "", avatarUrl: "" }, // Consistent field names
+    initialForm,
     { displayName: "", birthDate: "", bio: "", avatarUrl: "" }, 
-    validate
+    validate,
+    { displayName:  profile.displayName, birthDate:  profile.birthDate, bio: profile.bio, avatarUrl: profile.avatarUrl }
   );
   
 
@@ -45,7 +57,7 @@ const ModalUpdate: React.FC<ModalUpdate> = ({ isOpen, onClose, profile, onUpdate
         },
         body: JSON.stringify({
           displayName: form.displayName,
-          birthDate: form.birthDate,
+          birthDate: formatDateFormToString(form.birthDate + " 00:00:00"),
           bio: form.bio,
         }),
       });
@@ -55,7 +67,8 @@ const ModalUpdate: React.FC<ModalUpdate> = ({ isOpen, onClose, profile, onUpdate
         toast.error(errorData.message);
         return;
       }
-     
+      toast.success("Cập nhật thông tin thành công");
+      onClose();
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -94,7 +107,7 @@ const ModalUpdate: React.FC<ModalUpdate> = ({ isOpen, onClose, profile, onUpdate
         )}
         
          <InputField
-          title="Tên Đăng nhập"
+          title="Tên tài khoản"
           isRequire={true}
           placeholder="Nhập tên đăng nhập"
           onChangeText={(value: any) => handleChange("displayName", value)}
@@ -119,7 +132,7 @@ const ModalUpdate: React.FC<ModalUpdate> = ({ isOpen, onClose, profile, onUpdate
           <div className="relative">
             <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
             <input
-              type="date"
+              type="date" 
               className="pl-10 w-full p-2 border rounded-md"
               value={form.birthDate}
               onChange={(e) => handleChange("birthDate", e.target.value)}

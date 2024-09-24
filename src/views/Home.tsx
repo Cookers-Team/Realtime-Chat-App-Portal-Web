@@ -8,8 +8,6 @@ import { LoadingDialog } from "../components/Dialog";
 import { Profile } from "../models/profile/Profile";
 import ModalUpdate from "../components/modal/ModalUpdate";
 
-
-
 const Home = () => {
   
   const { isLoading, showLoading, hideLoading } = useLoading();
@@ -50,12 +48,13 @@ const Home = () => {
   const closeModal = () => {
     setIsModalOpen(false);
   };
-  const closeUpdate = () => {
+  const closeUpdate = async () => {
     setIsModalUpdateOpen(false);
+    // Sau khi tắt ModalUpdate, load lại profile
+    await showProfile(); 
   }
   const showUpdate = () => {
     setIsModalUpdateOpen(true);
-    console.log(isModalUpdateOpen);
   }
 
   return (
