@@ -23,7 +23,6 @@ const ModalUpdate: React.FC<ModalUpdate> = ({ isOpen, onClose, profile, onUpdate
     if (!form.displayName.trim()) {
       newErrors.displayName = "Tên đăng nhập không được bỏ trống";
     }
-    
     return newErrors;
   };
   
@@ -35,7 +34,8 @@ const ModalUpdate: React.FC<ModalUpdate> = ({ isOpen, onClose, profile, onUpdate
   
 
   const onUpdateProfile = async () => {
-    showLoading();
+    if (isValidForm()) {
+      showLoading();
     try {
       const response = await fetch(`${remoteUrl}/v1/user/update-profile`, {
         method: "PUT",
@@ -61,6 +61,8 @@ const ModalUpdate: React.FC<ModalUpdate> = ({ isOpen, onClose, profile, onUpdate
     } finally {
       hideLoading();
     }
+    }
+    
   };
   
   if (!isOpen) return null;
