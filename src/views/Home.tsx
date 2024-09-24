@@ -38,7 +38,6 @@ const Home = () => {
       }
       const result = await response.json();
       const currentProfile: Profile = result.data
-      console.log(currentProfile);
       setProfile(currentProfile);
       setIsModalOpen(true);
     } catch (error: any) {
@@ -54,13 +53,11 @@ const Home = () => {
   const closeUpdate = () => {
     setIsModalUpdateOpen(false);
   }
-  const showUpdate = async () => {
+  const showUpdate = () => {
     setIsModalUpdateOpen(true);
+    console.log(isModalUpdateOpen);
   }
 
-  
-
-  
   return (
     <div className="flex items-center justify-center h-screen">
       <div className="text-center">
@@ -69,7 +66,6 @@ const Home = () => {
        
       
         {/* Gọi component <ModalProfile></ModalProfile> và truyền các props */}
-        
         {profile && <ModalProfile isOpen={isModalOpen} profile={profile} onClose={closeModal} onUpdate={showUpdate}/>}
         {profile && <ModalUpdate isOpen={isModalUpdateOpen} profile={profile} onClose={closeUpdate} onUpdate={() => {}}/>}
         <LoadingDialog isVisible={isLoading} />

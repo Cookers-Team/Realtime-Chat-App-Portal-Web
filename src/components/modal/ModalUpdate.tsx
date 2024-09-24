@@ -4,6 +4,9 @@ import { ArrowLeft, CalendarIcon, KeyIcon, PenIcon, User, UserIcon } from "lucid
 import Button from "../Button";
 import InputField from "../InputField";
 import useForm from "../../hooks/useForm";
+import { useLoading } from "../../hooks/useLoading";
+import { remoteUrl } from "../../types/constant";
+import { toast } from "react-toastify";
 
 interface ModalUpdate {
   isOpen: boolean;
@@ -13,24 +16,55 @@ interface ModalUpdate {
 }
 
 const ModalUpdate: React.FC<ModalUpdate> = ({ isOpen, onClose, profile, onUpdate}) => {
-  if (!isOpen) return null;
+  const { isLoading, showLoading, hideLoading } = useLoading();
+
   const validate = (form: any) => {
     const newErrors: any = {};
-    if (!form.disPlayName.trim()) {
-      newErrors.disPlayName = "Tên đăng nhập không được bỏ trống";
+    if (!form.displayName.trim()) {
+      newErrors.displayName = "Tên đăng nhập không được bỏ trống";
     }
-    if (!form.password) {
-      newErrors.password = "Mật khẩu không được bỏ trống";
-    }
+    
     return newErrors;
   };
-
+  
   const { form, errors, handleChange, isValidForm } = useForm(
-    { displayName: "", birthDate:"", bio:"", avatarUrl:"", password:""},
-    { displayName: "", birthDate:"", bio:"", avatarUrl:"",password:""},
-    validate 
+    { displayName: "", birthDate: "", bio: "", avatarUrl: "" }, // Consistent field names
+    { displayName: "", birthDate: "", bio: "", avatarUrl: "" }, 
+    validate
   );
   
+
+  const onUpdateProfile = async () => {
+    showLoading();
+    try {
+      const response = await fetch(`${remoteUrl}/v1/user/update-profile`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("accessToken")}`,
+        },
+        body: JSON.stringify({
+          displayName: form.displayName,
+          birthDate: form.birthDate,
+          bio: form.bio,
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        toast.error(errorData.message);
+        return;
+      }
+     
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      hideLoading();
+    }
+  };
+  
+  if (!isOpen) return null;
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
       <div className="bg-white p-6 rounded-lg w-96">
@@ -62,9 +96,9 @@ const ModalUpdate: React.FC<ModalUpdate> = ({ isOpen, onClose, profile, onUpdate
           isRequire={true}
           placeholder="Nhập tên đăng nhập"
           onChangeText={(value: any) => handleChange("displayName", value)}
-          value={form.disPlayName}
+          value={form.displayName}
           icon={UserIcon}
-          error={errors.email}
+          error={errors.displayName}
         />
         <InputField
           title="Giới thiệu"
@@ -91,19 +125,8 @@ const ModalUpdate: React.FC<ModalUpdate> = ({ isOpen, onClose, profile, onUpdate
           </div>
           {errors.birthDate && <p className="text-red-500 text-xs mt-1">{errors.birthDate}</p>}
         </div>
-    
-        <InputField
-          title="Mật khẩu"
-          isRequire={true}
-          placeholder="Nhập mật khẩu"
-          onChangeText={(value: any) => handleChange("password", value)}
-          value={form.bio}
-          icon={KeyIcon}
-          error={undefined}
-        />
-
-        <Button title="Cập nhật" color="royalblue" onPress={onUpdate} />
-        
+  
+        <Button title="Cập nhật" color="royalblue" onPress={onUpdateProfile} />
       </div>
     </div>
   );
