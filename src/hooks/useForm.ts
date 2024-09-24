@@ -1,11 +1,14 @@
 import { useState } from "react";
 
 const useForm = (
-initialValues: any, initialErrors: any, validate: (form: any) => any, p0: { displayName: string; birthDate: string; bio: string; avatarUrl: string; }) => {
+  initialValues: any,
+  initialErrors: any,
+  validate: (form: any) => any
+) => {
   const [form, setForm] = useState(initialValues);
   const [errors, setErrors] = useState(initialErrors);
 
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field: any, value: any) => {
     setForm((prevForm: any) => ({ ...prevForm, [field]: value }));
     setErrors((prevErrors: any) => ({ ...prevErrors, [field]: "" }));
   };
@@ -19,6 +22,7 @@ initialValues: any, initialErrors: any, validate: (form: any) => any, p0: { disp
   return {
     form,
     errors,
+    setForm,
     handleChange,
     isValidForm,
   };
