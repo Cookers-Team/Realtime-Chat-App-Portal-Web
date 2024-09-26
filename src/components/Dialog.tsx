@@ -29,23 +29,28 @@ const ConfimationDialog = ({
       isVisible={isVisible}
       title={title}
       message={message}
+      onCancel={onCancel}
       color={color}
     >
-      <div className="flex space-x-2">
-        <button
-          onClick={onCancel}
-          className="p-3 rounded-md bg-gray-200 flex-1 text-gray-800 text-center text-lg font-semibold"
+      <View className="flex-row space-x-2">
+        <TouchableOpacity
+          onPress={onCancel}
+          className="p-3 rounded-md bg-gray-200 flex-1"
         >
-          Hủy
-        </button>
-        <button
-          onClick={onConfirm}
-          className="p-3 rounded-md flex-1 text-white text-center text-lg font-semibold"
+          <Text className="text-gray-800 text-center text-lg font-semibold">
+            Hủy
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={onConfirm}
+          className="p-3 rounded-md flex-1"
           style={{ backgroundColor: color }}
         >
-          {confirmText}
-        </button>
-      </div>
+          <Text className="text-white text-center text-lg font-semibold">
+            {confirmText}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </ModalForm>
   );
 };
