@@ -58,6 +58,8 @@ const Register = () => {
     if (field === "password") {
       if (!value.trim()) {
         newErrors.password = "Mật khẩu không được bỏ trống";
+      } else if (value.length < 6) {
+        newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự";
       } else {
         newErrors.password = "";
       }

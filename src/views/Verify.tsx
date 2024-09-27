@@ -102,7 +102,7 @@ const Verify: React.FC = () => {
   };
 
   const handleResendOTP = () => {
-    toast.info("Mã OTP mới đã được gửi đến email của bạn.");
+    handleVerify();
   };
 
   return (

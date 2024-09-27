@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-native-community/datetimepicker": "^8.2.0",
     "autoprefixer": "^10.4.20",
     "dayjs": "^1.11.13",
     "dotenv": "^16.4.5",
