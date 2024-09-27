@@ -32,7 +32,7 @@ const InputField = ({
         {Icon && <Icon size={20} color={error ? "#EF4444" : "#6B7280"} />}
         <input
           className={`flex-1 ml-2 text-base outline-none  ${
-            error ? "text-red-500" : "text-gray-700"
+            error ? "text-red-500 bg-red-50" : "text-gray-700"
           }`}
           placeholder={placeholder}
           value={value}
