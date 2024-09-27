@@ -2,6 +2,8 @@ import React from "react";
 import { Profile } from "../../models/profile/Profile";
 import { User } from "lucide-react";
 import Button from "../Button";
+import { formatDate } from "../../utils/DateUtils";
+
 
 interface ModalProfileProps {
   isOpen: boolean;
@@ -12,8 +14,7 @@ interface ModalProfileProps {
 
 const ModalProfile: React.FC<ModalProfileProps> = ({ isOpen, onClose, profile, onUpdate}) => {
   if (!isOpen) return null;
-  console.log(isOpen);
-  console.log(profile);
+  
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
       <div className="bg-white p-6 rounded-lg w-96">
@@ -29,15 +30,15 @@ const ModalProfile: React.FC<ModalProfileProps> = ({ isOpen, onClose, profile, o
             <User size={48} className="text-gray-500" />
           </div>
         )}
-        <p><strong>Display Name:</strong> {profile.displayName}</p>
+        <p><strong>Tên tài khoản:</strong> {profile.displayName}</p>
         <p><strong>Email:</strong> {profile.email}</p>
       
         {profile.birthDate ? (
-          <p><strong>Birth Date:</strong> {profile.birthDate}</p>
-        ) : <p><strong>Birth Date:</strong> Chưa cập nhật</p>}
+          <p><strong>Giới thiệu:</strong> {profile.bio}</p>
+        ) : <p><strong>Giới thiệu:</strong> Chưa cập nhật</p>}
          {profile.birthDate ? (
-          <p><strong>Birth Date:</strong> {profile.birthDate}</p>
-        ) : <p><strong>Birth Date:</strong> Chưa cập nhật</p>}
+          <p><strong>Ngày sinh:</strong> {formatDate(profile.birthDate)}</p>
+        ) : <p><strong>Ngày sinh:</strong> Chưa cập nhật</p>}
         
         <Button title="Cập nhật" color="royalblue" onPress={onUpdate} />
         <Button title="Đóng" color="red" onPress={onClose} />

@@ -124,10 +124,12 @@ const Register = () => {
         return;
       }
 
-      setTimeout(() => {
-        toast.success("Đăng ký thành công! Hãy xác thực email của bạn.");
-      }, 2000);
-      navigate(`/verify?email=${encodeURIComponent(form.email)}`);
+      toast.success("Đăng ký thành công! Hãy xác thực email của bạn.", {
+        onClose: () => {
+          navigate(`/verify?email=${encodeURIComponent(form.email)}`);
+        },
+        autoClose: 2000,
+      });
     } catch (error: any) {
       toast.error(error.message);
     }
