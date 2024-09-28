@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   MessageSquare,
   Image,
@@ -9,7 +9,6 @@ import {
   X,
   CircleUserRoundIcon,
   InfoIcon,
-  CalendarIcon,
 } from "lucide-react";
 import useFetch from "../hooks/useFetch";
 import UserIcon from "../assets/user_icon.png";
@@ -18,7 +17,6 @@ import useForm from "../hooks/useForm";
 // import DateTimePicker from "@react-native-community/datetimepicker";
 // import { formatBirthDate, formatDateFormToString } from "../utils/DateUtils";
 import { toast } from "react-toastify";
-import { remoteUrl } from "../types/constant";
 
 const ChatInterface = () => {
   interface Contact {
