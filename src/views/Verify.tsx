@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import { remoteUrl } from "../types/constant";
+import UTELogo from "../assets/ute_logo.png";
+import VerifyLogo from "../assets/otp-page.png";
 
 interface OTPInputProps {
   value: string;
@@ -110,16 +112,12 @@ const Verify: React.FC = () => {
       <div className="w-1/3 flex items-center justify-center p-8">
         <div className="text-white">
           <img
-            src="/src/assets/ute_logo.png"
+            src={UTELogo}
             alt="UTE Zalo logo"
             className="w-full md:w-1/4 lg:w-1/6 mb-4"
           />
           <h1 className="text-4xl font-bold mb-4">UTE Zalo</h1>
-          <img
-            src="/src/assets/otp-page.png"
-            alt="Illustration"
-            className="mb-4"
-          />
+          <img src={VerifyLogo} alt="Illustration" className="mb-4" />
         </div>
       </div>
       <div className="w-2/3 bg-white flex items-center justify-center p-8 rounded-s-3xl">
