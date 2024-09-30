@@ -1,114 +1,57 @@
-import Button from "../components/Button";
-import ModalProfile from "../components/modal/ModalProfile";
-import { useState } from "react";
-import { useLoading } from "../hooks/useLoading";
-import { remoteUrl } from "../types/constant";
-import { toast } from "react-toastify";
-import { LoadingDialog } from "../components/Dialog";
-import { Profile } from "../models/profile/Profile";
-import ModalUpdate from "../components/modal/ModalUpdate";
-
-import { useNavigate } from "react-router-dom";
+import React, { useState } from 'react';
+import NavBar from '../components/NavBar'; // Import NavBar
+import { LoadingDialog } from '../components/Dialog';
+import { Profile } from '../models/profile/Profile';
 
 const Home = () => {
-  const navigate = useNavigate();
-  const { isLoading, showLoading, hideLoading } = useLoading();
-
-  const [profile, setProfile] = useState<any>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const [isModalUpdateOpen, setIsModalUpdateOpen] = useState(false);
-
-  const showProfile = async () => {
-    showLoading();
-    try {
-      const response = await fetch(`${remoteUrl}/v1/user/profile`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        toast.error(errorData.message);
-        return;
-      }
-      const result = await response.json();
-      const currentProfile: Profile = result.data;
-      setProfile(currentProfile);
-      setIsModalOpen(true);
-    } catch (error: any) {
-      toast.error(error.message);
-    } finally {
-      hideLoading();
-    }
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-  };
-
-  const closeUpdate = () => {
-    setIsModalUpdateOpen(false);
-  }
-
-  const showUpdate = async () => {
-    setIsModalUpdateOpen(true);
-  }
-
-  const navigateToFriends = () => {
-    navigate('/friends');
-  const closeUpdate = async () => {
-    setIsModalUpdateOpen(false);
-    // Sau khi tắt ModalUpdate, load lại profile
-    await showProfile();
-  };
-  const showUpdate = () => {
-    setIsModalUpdateOpen(true);
-  };
+  const [selectedSection, setSelectedSection] = useState(''); // Trạng thái để lưu phần được chọn
 
   return (
-    <div className="flex items-center justify-center h-screen">
-      <div className="text-center">
+    <div className="flex h-screen">
+      {/* Phần 1: Thanh điều hướng (NavBar) */}
+      <NavBar setSelectedSection={setSelectedSection} /> {/* Truyền setSelectedSection làm prop */}
 
-        <h1 className="text-2xl mb-4">This is Home Page :3</h1>
-        <div className="space-y-4">
-          <Button title="Profile" color="royalblue" onPress={showProfile} />
-          <Button title="Friends" color="green" onPress={navigateToFriends} />
+      {/* Phần 2: Khu vực tìm kiếm */}
+      <div className="w-1/5 bg-gray-200 p-4">
+        <div className="relative mb-4">
+          <input
+            type="text"
+            placeholder="Tìm kiếm"
+            className="pl-10 py-2 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
-      
-        {/* Gọi component <ModalProfile></ModalProfile> và truyền các props */}
-        {profile && <ModalProfile isOpen={isModalOpen} profile={profile} onClose={closeModal} onUpdate={showUpdate}/>}
-        {profile && <ModalUpdate isOpen={isModalUpdateOpen} profile={profile} onClose={closeUpdate} onUpdate={() => {}}/>}
-
-        <h1 className="text-2xl">This is Home Page :3</h1>
-        <Button title="Profile" color="royalblue" onPress={showProfile} />
-
-        {/* Gọi component <ModalProfile></ModalProfile> và truyền các props */}
-        {profile && (
-          <ModalProfile
-            isOpen={isModalOpen}
-            profile={profile}
-            onClose={closeModal}
-            onUpdate={showUpdate}
-          />
-        )}
-        {profile && (
-          <ModalUpdate
-            isOpen={isModalUpdateOpen}
-            profile={profile}
-            onClose={closeUpdate}
-            onUpdate={() => {}}
-          />
-        )}
-        <LoadingDialog isVisible={isLoading} />
+        <p className="text-gray-600">Dùng ô tìm kiếm để tìm tin nhắn, bạn bè, bài đăng...</p>
       </div>
+
+      {/* Phần 3: Khu vực hiển thị nội dung */}
+      <div className="w-4/5 bg-white p-4">
+        {selectedSection === 'messages' && (
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Tin nhắn</h2>
+            <p>Hiển thị nội dung tin nhắn tại đây...</p>
+          </div>
+        )}
+        {selectedSection === 'posts' && (
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Bài đăng</h2>
+            <p>Hiển thị nội dung bài đăng tại đây...</p>
+          </div>
+        )}
+        {selectedSection === 'settings' && (
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Cài đặt</h2>
+            <p>Hiển thị các cài đặt tại đây...</p>
+          </div>
+        )}
+        {selectedSection === '' && (
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Chọn một mục từ thanh điều hướng</h2>
+          </div>
+        )}
+      </div>
+      <LoadingDialog isVisible={false} />
     </div>
   );
 };
 
-
 export default Home;
-

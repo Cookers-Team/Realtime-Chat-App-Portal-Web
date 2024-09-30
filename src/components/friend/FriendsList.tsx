@@ -18,6 +18,8 @@ const FriendsList = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc'); // Trạng thái sắp xếp
 
+  const defaultAvatar = 'https://via.placeholder.com/150'; // URL ảnh avatar demo mặc định
+
   useEffect(() => {
     fetchFriends();
   }, []);
@@ -48,7 +50,7 @@ const FriendsList = () => {
             _id: friend._id,
             displayName: receiver?.displayName || 'Unknown',
             email: receiver?.email || 'Email không có',
-            avatarUrl: receiver?.avatarUrl || '/default-avatar.png',
+            avatarUrl: receiver?.avatarUrl || defaultAvatar, // Sử dụng ảnh mặc định nếu avatar null
           };
         });
 
@@ -129,7 +131,7 @@ const FriendsList = () => {
             {groupedFriends[letter].map(friend => (
               <div key={friend._id} className="flex items-center mb-4">
                 <img
-                  src={friend.avatarUrl || '/default-avatar.png'}
+                  src={friend.avatarUrl || defaultAvatar} // Sử dụng ảnh mặc định nếu avatar null
                   alt={friend.displayName || 'Unknown'}
                   className="w-12 h-12 rounded-full mr-4"
                 />
