@@ -4,9 +4,11 @@ import Register from "./views/Register";
 import ForgotPassword from "./views/ForgotPassword";
 import Home from "./views/Home";
 import Verify from "./views/Verify";
+
 import Friend from "./views/Friend";
 import Home2 from "./views/Home2"
 
+import Chat from "./views/Chat";
 
 const App = () => {
   return (
@@ -19,7 +21,7 @@ const App = () => {
         <Route path="/home" element={<Home />} />
         <Route path="/home2" element={<Home2 />} />
         <Route path="/friends" element={<Friend />} />
-      
+        <Route path="/chat" element={<Chat />} />
       </Routes>
     </BrowserRouter>
   );

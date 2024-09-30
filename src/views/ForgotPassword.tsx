@@ -5,8 +5,10 @@ import Button from "../components/Button";
 import { remoteUrl } from "../types/constant";
 import { ToastContainer, toast } from "react-toastify";
 import { MailIcon, LockIcon } from "lucide-react";
-import { useLoading } from "../hooks/useLoading"; 
-import { LoadingDialog } from "../components/Dialog"; 
+import { useLoading } from "../hooks/useLoading";
+import { LoadingDialog } from "../components/Dialog";
+import UTELogo from "../assets/ute_logo.png";
+import ForgotPwLogo from "../assets/forgot-pw-page.png";
 
 type FormFields = {
   email: string;
@@ -30,7 +32,7 @@ const ForgotPassword = () => {
   });
 
   const [showNewPassword, setShowNewPassword] = useState(false);
-  const { isLoading, showLoading, hideLoading } = useLoading(); 
+  const { isLoading, showLoading, hideLoading } = useLoading();
 
   const validate = (field: keyof FormFields, value: string) => {
     const newErrors = { ...errors };
@@ -40,6 +42,8 @@ const ForgotPassword = () => {
       newErrors.otp = "OTP không được bỏ trống";
     } else if (field === "newPassword" && !value.trim()) {
       newErrors.newPassword = "Mật khẩu mới không được bỏ trống";
+    } else if (field === "newPassword" && value.length < 6) {
+      newErrors.newPassword = "Mật khẩu phải có ít nhất 6 ký tự";
     } else {
       newErrors[field] = "";
     }
@@ -57,7 +61,7 @@ const ForgotPassword = () => {
       return;
     }
 
-    showLoading(); 
+    showLoading();
     try {
       const response = await fetch(`${remoteUrl}/v1/user/forgot-password`, {
         method: "POST",
@@ -72,13 +76,12 @@ const ForgotPassword = () => {
         toast.error(errorData.message);
         return;
       }
-
       toast.success("OTP đã được gửi đến email của bạn");
       setStep(2);
     } catch (error) {
       toast.error("Có lỗi xảy ra, vui lòng thử lại sau.");
     } finally {
-      hideLoading(); 
+      hideLoading();
     }
   };
 
@@ -88,7 +91,7 @@ const ForgotPassword = () => {
       return;
     }
 
-    showLoading(); 
+    showLoading();
     try {
       const response = await fetch(`${remoteUrl}/v1/user/reset-password`, {
         method: "POST",
@@ -117,56 +120,92 @@ const ForgotPassword = () => {
       console.error("Error:", error);
       toast.error("Có lỗi xảy ra, vui lòng thử lại sau.");
     } finally {
-      hideLoading(); 
+      hideLoading();
     }
   };
 
+  const handleResendOTP = () => {
+    handleResetPassword();
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-lg max-w-sm w-full">
-        <h2 className="text-2xl font-bold text-center mb-6">Quên mật khẩu</h2>
-        {step === 1 && (
-          <>
-            <InputField
-              title="Email"
-              isRequire={true}
-              placeholder="Nhập địa chỉ email"
-              onChangeText={(value: string) => handleChange("email", value)}
-              value={form.email}
-              icon={MailIcon}
-              error={errors.email}
-            />
-            <Button title="Gửi OTP" color="blue" onPress={handleSubmitEmail} />
-          </>
-        )}
-        {step === 2 && (
-          <>
-            <InputField
-              title="OTP"
-              isRequire={true}
-              placeholder="Nhập mã OTP"
-              onChangeText={(value: string) => handleChange("otp", value)}
-              value={form.otp}
-              error={errors.otp}
-            />
-            <InputField
-              title="Mật khẩu mới"
-              isRequire={true}
-              placeholder="Nhập mật khẩu mới"
-              onChangeText={(value: string) => handleChange("newPassword", value)}
-              value={form.newPassword}
-              icon={LockIcon}
-              secureTextEntry={!showNewPassword}
-              togglePassword={() => setShowNewPassword(!showNewPassword)}
-              showPassword={showNewPassword}
-              error={errors.newPassword}
-            />
-            <Button title="Đặt lại mật khẩu" color="green" onPress={handleResetPassword} />
-          </>
-        )}
+    <div className="min-h-screen flex bg-blue-500">
+      <div className="w-1/3 flex items-center justify-center p-8">
+        <div className="text-white">
+          <img
+            src={UTELogo}
+            alt="UTE Zalo logo"
+            className="w-full md:w-1/4 lg:w-1/6 mb-4"
+          />
+          <h1 className="text-4xl font-bold mb-4">UTE Zalo</h1>
+          <img src={ForgotPwLogo} alt="Illustration" className="mb-4" />
+        </div>
       </div>
-      <LoadingDialog isVisible={isLoading} /> {/* Hiển thị hộp thoại loading */}
-      <ToastContainer />
+      <div className="w-2/3 bg-white flex items-center justify-center p-8 rounded-s-3xl">
+        <div className="max-w-md w-full space-y-6">
+          <h2 className="text-3xl font-bold text-center mb-6">Quên mật khẩu</h2>
+          {step === 1 && (
+            <>
+              <InputField
+                title="Email"
+                isRequire={true}
+                placeholder="Nhập địa chỉ email"
+                onChangeText={(value: string) => handleChange("email", value)}
+                value={form.email}
+                icon={MailIcon}
+                error={errors.email}
+              />
+              <Button
+                title="Gửi OTP"
+                color="blue"
+                onPress={handleSubmitEmail}
+              />
+            </>
+          )}
+          {step === 2 && (
+            <>
+              <InputField
+                title="OTP"
+                isRequire={true}
+                placeholder="Nhập mã OTP"
+                onChangeText={(value: string) => handleChange("otp", value)}
+                value={form.otp}
+                error={errors.otp}
+              />
+              <InputField
+                title="Mật khẩu mới"
+                isRequire={true}
+                placeholder="Nhập mật khẩu mới"
+                onChangeText={(value: string) =>
+                  handleChange("newPassword", value)
+                }
+                value={form.newPassword}
+                icon={LockIcon}
+                secureTextEntry={!showNewPassword}
+                togglePassword={() => setShowNewPassword(!showNewPassword)}
+                showPassword={showNewPassword}
+                error={errors.newPassword}
+              />
+              <Button
+                title="Đặt lại mật khẩu"
+                color="green"
+                onPress={handleResetPassword}
+              />
+              <p className="text-center">
+                Bạn chưa nhận được mã OTP?{" "}
+                <button
+                  onClick={handleResendOTP}
+                  className="text-blue-500 hover:underline"
+                >
+                  Gửi lại OTP
+                </button>
+              </p>
+            </>
+          )}
+        </div>
+        <LoadingDialog isVisible={isLoading} />
+        <ToastContainer />
+      </div>
     </div>
   );
 };

@@ -1,15 +1,69 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import InputField from "../components/InputField";
-import Button from "../components/Button";
-import { remoteUrl } from "../types/constant";
 import { ToastContainer, toast } from "react-toastify";
+import { remoteUrl } from "../types/constant";
+import UTELogo from "../assets/ute_logo.png";
+import VerifyLogo from "../assets/otp-page.png";
 
-const Verify = () => {
+interface OTPInputProps {
+  value: string;
+  onChange: (newValue: string) => void;
+}
+
+const OTPInput: React.FC<OTPInputProps> = ({ value, onChange }) => {
+  const inputRefs = Array(6)
+    .fill(0)
+    .map(() => React.createRef<HTMLInputElement>());
+
+  const handleChange = (
+    index: number,
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const val = e.target.value;
+    if (val.length <= 1) {
+      const newValue = value.split("");
+      newValue[index] = val;
+      onChange(newValue.join(""));
+      if (val && index < 5) {
+        inputRefs[index + 1].current?.focus();
+      }
+    }
+  };
+
+  const handleKeyDown = (
+    index: number,
+    e: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    if (e.key === "Backspace" && !value[index] && index > 0) {
+      inputRefs[index - 1].current?.focus();
+    }
+  };
+
+  return (
+    <div className="flex justify-between mb-4">
+      {Array(6)
+        .fill(0)
+        .map((_, index) => (
+          <input
+            key={index}
+            ref={inputRefs[index]}
+            type="text"
+            maxLength={1}
+            className="w-12 h-12 text-center text-xl border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={value[index] || ""}
+            onChange={(e) => handleChange(index, e)}
+            onKeyDown={(e) => handleKeyDown(index, e)}
+          />
+        ))}
+    </div>
+  );
+};
+
+const Verify: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [otp, setOtp] = useState("");
-  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
 
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
@@ -49,18 +103,47 @@ const Verify = () => {
     }
   };
 
+  const handleResendOTP = () => {
+    handleVerify();
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-lg max-w-sm w-full">
-        <h2 className="text-2xl font-bold text-center mb-6">Xác thực OTP</h2>
-        <InputField
-          title="OTP"
-          isRequire={true}
-          placeholder="Nhập mã OTP"
-          onChangeText={(value: any) => setOtp(value)}
-          value={otp}
-        />
-        <Button title="XÁC THỰC" color="blue" onPress={handleVerify} />
+    <div className="min-h-screen flex bg-blue-500">
+      <div className="w-1/3 flex items-center justify-center p-8">
+        <div className="text-white">
+          <img
+            src={UTELogo}
+            alt="UTE Zalo logo"
+            className="w-full md:w-1/4 lg:w-1/6 mb-4"
+          />
+          <h1 className="text-4xl font-bold mb-4">UTE Zalo</h1>
+          <img src={VerifyLogo} alt="Illustration" className="mb-4" />
+        </div>
+      </div>
+      <div className="w-2/3 bg-white flex items-center justify-center p-8 rounded-s-3xl">
+        <div className="max-w-md w-full">
+          <h2 className="text-3xl font-bold text-center mb-6">Xác thực OTP</h2>
+          <p className="text-center mb-6">
+            Vui lòng nhập mã OTP được gửi qua email{" "}
+            {email.replace(/(.{3})(.*)(?=@)/, "$1***")}
+          </p>
+          <OTPInput value={otp} onChange={setOtp} />
+          <button
+            className="w-full bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 transition duration-200 mb-4"
+            onClick={handleVerify}
+          >
+            Xác thực
+          </button>
+          <p className="text-center">
+            Bạn chưa nhận được mã OTP?{" "}
+            <button
+              onClick={handleResendOTP}
+              className="text-blue-500 hover:underline"
+            >
+              Gửi lại OTP
+            </button>
+          </p>
+        </div>
       </div>
       <ToastContainer />
     </div>

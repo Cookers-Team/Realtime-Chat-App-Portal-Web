@@ -31,16 +31,16 @@ const ConfimationDialog = ({
       message={message}
       color={color}
     >
-      <div className="flex space-x-2">
+      <div className="flex gap-2 w-full">
         <button
           onClick={onCancel}
-          className="p-3 rounded-md bg-gray-200 flex-1 text-gray-800 text-center text-lg font-semibold"
+          className="p-3 rounded-md bg-gray-200 w-full text-gray-800 text-center text-lg font-semibold"
         >
           Hủy
         </button>
         <button
           onClick={onConfirm}
-          className="p-3 rounded-md flex-1 text-white text-center text-lg font-semibold"
+          className="p-3 rounded-md w-full text-white text-center text-lg font-semibold"
           style={{ backgroundColor: color }}
         >
           {confirmText}

@@ -10,16 +10,20 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-native-community/datetimepicker": "^8.2.0",
     "autoprefixer": "^10.4.20",
+    "build": "^0.1.4",
     "dayjs": "^1.11.13",
     "dotenv": "^16.4.5",
     "lucide-react": "^0.441.0",
+    "npm": "^10.8.3",
     "postcss": "^8.4.47",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.26.2",
     "react-toastify": "^10.0.5",
     "react-tooltip": "^5.28.0",
+    "run": "^1.5.0",
     "zalo-ute": "file:"
   },
   "devDependencies": {
