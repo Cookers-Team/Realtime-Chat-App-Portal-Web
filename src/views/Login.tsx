@@ -53,7 +53,7 @@ const Login = () => {
         const data = await response.json();
         await localStorage.setItem("accessToken", data.data.accessToken);
         toast.success("Đăng nhập thành công");
-        navigate("/home");
+        navigate("/home2");
       } catch (error: any) {
         toast.error(error.message);
       } finally {
