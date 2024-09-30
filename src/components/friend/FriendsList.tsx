@@ -3,7 +3,7 @@ import { useLoading } from '../../hooks/useLoading';
 import { remoteUrl } from '../../types/constant';
 import { toast } from "react-toastify";
 import InputField from '../InputField';
-import { Search, ChevronDown, ChevronUp } from 'lucide-react'; // Import các biểu tượng cần thiết
+import { Search, ChevronDown, ChevronUp } from 'lucide-react'; 
 
 interface Friend {
   _id: string;
@@ -16,9 +16,9 @@ const FriendsList = () => {
   const { isLoading, showLoading, hideLoading } = useLoading();
   const [friends, setFriends] = useState<Friend[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc'); // Trạng thái sắp xếp
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc'); 
 
-  const defaultAvatar = 'https://via.placeholder.com/150'; // URL ảnh avatar demo mặc định
+  const defaultAvatar = 'https://via.placeholder.com/150'; 
 
   useEffect(() => {
     fetchFriends();
@@ -50,7 +50,7 @@ const FriendsList = () => {
             _id: friend._id,
             displayName: receiver?.displayName || 'Unknown',
             email: receiver?.email || 'Email không có',
-            avatarUrl: receiver?.avatarUrl || defaultAvatar, // Sử dụng ảnh mặc định nếu avatar null
+            avatarUrl: receiver?.avatarUrl || defaultAvatar, 
           };
         });
 
@@ -62,7 +62,7 @@ const FriendsList = () => {
     }
   };
 
-  // Lọc và sắp xếp bạn bè theo tên
+ 
   const filteredFriends = friends
     .filter(friend =>
       friend.displayName?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -76,7 +76,7 @@ const FriendsList = () => {
       }
     });
 
-  // Phân chia bạn bè theo chữ cái đầu tiên
+
   const groupedFriends: { [key: string]: Friend[] } = filteredFriends.reduce((acc, friend) => {
     const firstLetter = friend.displayName?.charAt(0).toUpperCase() || '#';
     if (!acc[firstLetter]) {
@@ -92,23 +92,22 @@ const FriendsList = () => {
         <h2 className="text-xl font-semibold">Bạn bè ({filteredFriends.length})</h2>
       </div>
 
-      {/* Tìm kiếm và sắp xếp nằm trong cùng một dòng */}
+    
       <div className="flex items-center mb-4 space-x-2">
-        {/* Ô tìm kiếm */}
+    
         <div className="flex-grow">
           <InputField
             placeholder="Tìm kiếm bạn bè"
             icon={Search}
             value={searchQuery}
             onChangeText={setSearchQuery}
-            className="h-10" // Đảm bảo chiều cao đồng nhất với nút sắp xếp
+            className="h-10" 
           />
         </div>
 
-        {/* Ô sắp xếp */}
         <div className="flex-shrink-0">
           <button
-            className="flex items-center border border-gray-300 px-2 py-2 rounded-md focus:outline-none hover:bg-gray-100 h-10" // Đảm bảo chiều cao đồng nhất với ô tìm kiếm
+            className="flex items-center border border-gray-300 px-2 py-2 rounded-md focus:outline-none hover:bg-gray-100 h-10" 
             onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
           >
             {sortOrder === 'asc' ? (
@@ -131,7 +130,7 @@ const FriendsList = () => {
             {groupedFriends[letter].map(friend => (
               <div key={friend._id} className="flex items-center mb-4">
                 <img
-                  src={friend.avatarUrl || defaultAvatar} // Sử dụng ảnh mặc định nếu avatar null
+                  src={friend.avatarUrl || defaultAvatar} 
                   alt={friend.displayName || 'Unknown'}
                   className="w-12 h-12 rounded-full mr-4"
                 />
