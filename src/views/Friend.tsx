@@ -1,20 +1,22 @@
-import React, { useState } from 'react';
-import NavBar from '../components/NavBar';
-import FriendsList from '../components/friend/FriendsList';
-import GroupList from '../components/friend/GroupList';
-import FriendRequests from '../components/friend/FriendRequests';
-import { Search, UserPlus, Users } from 'lucide-react'; // Thêm Users vào import
+import React, { useState } from "react";
+import NavBar from "../components/NavBar";
+import FriendsList from "../components/friend/FriendsList";
+import GroupList from "../components/friend/GroupList";
+import FriendRequests from "../components/friend/FriendRequests";
+import Profile from "./ProfileModal"; // Import Profile modal
+import { Search, UserPlus, Users } from "lucide-react"; // Thêm Users vào import
 
 const Friend = () => {
-  const [selectedSection, setSelectedSection] = useState('friends');
+  const [selectedSection, setSelectedSection] = useState("friends");
+  const [isProfileVisible, setProfileVisible] = useState(false); // Trạng thái quản lý modal
 
   const renderContent = () => {
     switch (selectedSection) {
-      case 'friends':
+      case "friends":
         return <FriendsList />;
-      case 'groups':
+      case "groups":
         return <GroupList />;
-      case 'requests':
+      case "requests":
         return <FriendRequests />;
       default:
         return <FriendsList />;
@@ -24,7 +26,19 @@ const Friend = () => {
   return (
     <div className="flex h-screen">
       {/* Phần 1: Thanh điều hướng */}
-      <NavBar setSelectedSection={setSelectedSection} />
+      <NavBar
+        setSelectedSection={setSelectedSection}
+        setProfileVisible={setProfileVisible}
+      />
+      {/* Truyền setProfileVisible để quản lý mở modal Profile */}
+
+      {/* Hiển thị modal Profile khi cần */}
+      {isProfileVisible && (
+        <Profile
+          isVisible={isProfileVisible}
+          onClose={() => setProfileVisible(false)} // Đóng modal
+        />
+      )}
 
       {/* Phần 2: Danh mục các phần */}
       <div className="w-1/5 bg-gray-200 p-4 flex flex-col justify-start">
@@ -42,24 +56,31 @@ const Friend = () => {
         </div>
 
         {/* Danh sách các phần */}
-        <div className="mb-2 flex items-center cursor-pointer hover:bg-gray-300 p-2 rounded-md" onClick={() => setSelectedSection('friends')}>
+        <div
+          className="mb-2 flex items-center cursor-pointer hover:bg-gray-300 p-2 rounded-md"
+          onClick={() => setSelectedSection("friends")}
+        >
           <Users size={24} className="mr-2" />
           <p className="text-lg">Danh sách bạn bè</p>
         </div>
-        <div className="mb-2 flex items-center cursor-pointer hover:bg-gray-300 p-2 rounded-md" onClick={() => setSelectedSection('groups')}>
+        <div
+          className="mb-2 flex items-center cursor-pointer hover:bg-gray-300 p-2 rounded-md"
+          onClick={() => setSelectedSection("groups")}
+        >
           <Users size={24} className="mr-2" />
           <p className="text-lg">Danh sách nhóm</p>
         </div>
-        <div className="mb-2 flex items-center cursor-pointer hover:bg-gray-300 p-2 rounded-md" onClick={() => setSelectedSection('requests')}>
+        <div
+          className="mb-2 flex items-center cursor-pointer hover:bg-gray-300 p-2 rounded-md"
+          onClick={() => setSelectedSection("requests")}
+        >
           <UserPlus size={24} className="mr-2" />
           <p className="text-lg">Lời mời kết bạn</p>
         </div>
       </div>
 
       {/* Phần 3: Hiển thị nội dung tương ứng */}
-      <div className="w-4/5 bg-white p-4">
-        {renderContent()}
-      </div>
+      <div className="w-4/5 bg-white p-4">{renderContent()}</div>
     </div>
   );
 };
