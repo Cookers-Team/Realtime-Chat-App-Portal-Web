@@ -12,9 +12,11 @@
   "dependencies": {
     "@react-native-community/datetimepicker": "^8.2.0",
     "autoprefixer": "^10.4.20",
+    "axios": "^1.7.7",
     "build": "^0.1.4",
     "dayjs": "^1.11.13",
     "dotenv": "^16.4.5",
+    "jwt-decode": "^4.0.0",
     "lucide-react": "^0.441.0",
     "npm": "^10.8.3",
     "postcss": "^8.4.47",
