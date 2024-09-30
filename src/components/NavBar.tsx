@@ -42,7 +42,7 @@ const NavBar: React.FC<NavBarProps> = ({
       <button
         data-tooltip-id="tooltip-posts"
         data-tooltip-content="Posts"
-        onClick={() => setSelectedSection("posts")}
+        onClick={() => navigate('/postPage')}
         className="focus:outline-none"
       >
         <FileText size={24} className="hover:scale-110 transition-transform" />

@@ -4,6 +4,7 @@ import Register from "./views/Register";
 import ForgotPassword from "./views/ForgotPassword";
 import Home from "./views/Home";
 import Verify from "./views/Verify";
+import PostPage from "./views/PostPage";
 import Friend from "./views/Friend";
 import Chat from "./views/Chat";
 import PrivateRoute from "./components/PrivateRoute";
@@ -16,8 +17,8 @@ const App = () => {
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/verify" element={<Verify />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-
+        <Route path="/forgot-password" element={<ForgotPassword />} 
+          
         <Route
           path="/home"
           element={
@@ -39,6 +40,14 @@ const App = () => {
           element={
             <PrivateRoute>
               <Chat />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/postPage"
+          element={
+            <PrivateRoute>
+              <PostPage />
             </PrivateRoute>
           }
         />
