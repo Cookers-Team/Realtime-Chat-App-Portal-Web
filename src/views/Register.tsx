@@ -7,8 +7,11 @@ import { ToastContainer, toast } from "react-toastify";
 import { LockIcon, MailIcon, PhoneIcon, ContactIcon } from "lucide-react";
 import UTELogo from "../assets/ute_logo.png";
 import RegisterPageLogo from "../assets/registerpage.png";
+import { useLoading } from "../hooks/useLoading";
+import { LoadingDialog } from "../components/Dialog";
 
 const Register = () => {
+  const { isLoading, showLoading, hideLoading } = useLoading();
   const navigate = useNavigate();
   const [form, setForm] = useState({
     displayName: "",
@@ -113,7 +116,9 @@ const Register = () => {
     }
 
     try {
+      showLoading();
       const { confirmPassword, ...dataToSend } = form;
+
       const response = await fetch(`${remoteUrl}/v1/user/register`, {
         method: "POST",
         headers: {
@@ -127,7 +132,7 @@ const Register = () => {
         toast.error(errorData.message);
         return;
       }
-
+      hideLoading();
       toast.success("Đăng ký thành công! Hãy xác thực email của bạn.", {
         onClose: () => {
           navigate(`/verify?email=${encodeURIComponent(form.email)}`);
@@ -221,6 +226,7 @@ const Register = () => {
         </div>
       </div>
       <ToastContainer />
+      <LoadingDialog isVisible={isLoading} />
     </div>
   );
 };

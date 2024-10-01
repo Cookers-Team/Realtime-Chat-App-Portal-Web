@@ -30,23 +30,17 @@ const Friend = () => {
 
   return (
     <div className="flex h-screen">
-
       
-    
-
       <NavBar
         setSelectedSection={setSelectedSection}
         setProfileVisible={setProfileVisible}
       />
-     
-      {isProfileVisible && (
+    {isProfileVisible && (
         <Profile
           isVisible={isProfileVisible}
-          onClose={() => setProfileVisible(false)} 
+          onClose={() => setProfileVisible(false)}
         />
       )}
-
-
       <div className="w-1/5 bg-gray-200 p-4 flex flex-col justify-start">
        
         <div className="relative mb-6">
@@ -63,39 +57,24 @@ const Friend = () => {
             <UserPlus size={24} />
           </div>
         </div>
-
    
         <div className="mb-2 flex items-center cursor-pointer hover:bg-gray-300 p-2 rounded-md" onClick={() => setSelectedSection('friends')}>
-
-        <div
-          className="mb-2 flex items-center cursor-pointer hover:bg-gray-300 p-2 rounded-md"
-          onClick={() => setSelectedSection("friends")}
-        >
-
           <Users size={24} className="mr-2" />
           <p className="text-lg">Danh sách bạn bè</p>
         </div>
-        <div
-          className="mb-2 flex items-center cursor-pointer hover:bg-gray-300 p-2 rounded-md"
-          onClick={() => setSelectedSection("groups")}
-        >
+        <div className="mb-2 flex items-center cursor-pointer hover:bg-gray-300 p-2 rounded-md" onClick={() => setSelectedSection('groups')}>
           <Users size={24} className="mr-2" />
           <p className="text-lg">Danh sách nhóm</p>
         </div>
-        <div
-          className="mb-2 flex items-center cursor-pointer hover:bg-gray-300 p-2 rounded-md"
-          onClick={() => setSelectedSection("requests")}
-        >
+        <div className="mb-2 flex items-center cursor-pointer hover:bg-gray-300 p-2 rounded-md" onClick={() => setSelectedSection('requests')}>
           <UserPlus size={24} className="mr-2" />
           <p className="text-lg">Lời mời kết bạn</p>
         </div>
       </div>
-
-
+      
       <div className="w-4/5 bg-white p-4">
         {renderContent()}
       </div>
-
 
       <AddFriend 
         isOpen={isAddFriendOpen} 

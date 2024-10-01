@@ -4,6 +4,8 @@ import { ToastContainer, toast } from "react-toastify";
 import { remoteUrl } from "../types/constant";
 import UTELogo from "../assets/ute_logo.png";
 import VerifyLogo from "../assets/otp-page.png";
+import { useLoading } from "../hooks/useLoading";
+import { LoadingDialog } from "../components/Dialog";
 
 interface OTPInputProps {
   value: string;
@@ -60,6 +62,7 @@ const OTPInput: React.FC<OTPInputProps> = ({ value, onChange }) => {
 };
 
 const Verify: React.FC = () => {
+  const { isLoading, showLoading, hideLoading } = useLoading();
   const navigate = useNavigate();
   const location = useLocation();
   const [otp, setOtp] = useState<string>("");
@@ -78,6 +81,7 @@ const Verify: React.FC = () => {
 
   const handleVerify = async () => {
     try {
+      showLoading();
       const response = await fetch(`${remoteUrl}/v1/user/verify`, {
         method: "POST",
         headers: {
@@ -91,7 +95,7 @@ const Verify: React.FC = () => {
         toast.error(errorData.message);
         return;
       }
-
+      hideLoading();
       toast.success("Xác thực thành công! Hãy đăng nhập.", {
         onClose: () => {
           navigate("/");
@@ -146,6 +150,7 @@ const Verify: React.FC = () => {
         </div>
       </div>
       <ToastContainer />
+      <LoadingDialog isVisible={isLoading} />
     </div>
   );
 };
