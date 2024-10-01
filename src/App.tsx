@@ -6,8 +6,9 @@ import Home from "./views/Home";
 import Verify from "./views/Verify";
 import PostPage from "./views/PostPage";
 import Friend from "./views/Friend";
-
 import Chat from "./views/Chat";
+import PrivateRoute from "./components/PrivateRoute";
+import Profile from "./views/ProfileModal";
 
 const App = () => {
   return (
@@ -17,10 +18,38 @@ const App = () => {
         <Route path="/register" element={<Register />} />
         <Route path="/verify" element={<Verify />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/friends" element={<Friend />} />
-        <Route path="/chat" element={<Chat />} />
-        <Route path="/postPage" element={<PostPage />} />
+        <Route
+          path="/home"
+          element={
+            <PrivateRoute>
+              <Home />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/friends"
+          element={
+            <PrivateRoute>
+              <Friend />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/chat"
+          element={
+            <PrivateRoute>
+              <Chat />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/postPage"
+          element={
+            <PrivateRoute>
+              <PostPage />
+            </PrivateRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );
