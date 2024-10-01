@@ -16,7 +16,7 @@ interface PostItemProps {
 
 const PostItem: React.FC<PostItemProps> = ({ user, content, imageUrl, totalComments, totalReactions, createdAt }) => {
   return (
-    <div className="bg-white p-4 mb-4 shadow rounded-lg max-w-2xl mx-auto border-gray-400 border"> 
+    <div className="bg-white p-4 mb-4 shadow rounded-lg max-w-2xl mx-auto border-gray-300 border"> 
       <div className="flex items-center mb-2">
         <img
           src={user.avatarUrl || '/default-avatar.png'}

@@ -7,11 +7,12 @@ import InputField from '../InputField';
 import { Search, PlusCircle } from 'lucide-react';
 import { jwtDecode } from 'jwt-decode';
 import Button from '../Button';
+import { LoadingDialog } from '../Dialog';
 
 const MyPosts = () => {
   const [posts, setPosts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const { showLoading, hideLoading } = useLoading();
+  const { isLoading, showLoading, hideLoading } = useLoading();
 
   const getUserIdFromToken = () => {
     const token = localStorage.getItem('accessToken');
@@ -116,7 +117,9 @@ const MyPosts = () => {
           <p className="text-center">Không có bài viết nào.</p>
         )}
       </div>
+      <LoadingDialog isVisible={isLoading} />
     </div>
+    
   );
 };
 

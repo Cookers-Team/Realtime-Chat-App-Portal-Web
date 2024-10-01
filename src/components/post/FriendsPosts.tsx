@@ -5,11 +5,12 @@ import { remoteUrl } from '../../types/constant';
 import { toast } from 'react-toastify';
 import InputField from '../InputField';
 import { Search } from 'lucide-react';
+import { LoadingDialog } from '../Dialog';
 
 const FriendsPosts = () => {
   const [posts, setPosts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const { showLoading, hideLoading } = useLoading();
+  const { isLoading, showLoading, hideLoading } = useLoading();
 
   useEffect(() => {
     fetchPosts();
@@ -82,6 +83,7 @@ const FriendsPosts = () => {
           <p className="text-center">Không có bài viết nào.</p>
         )}
       </div>
+      <LoadingDialog isVisible={isLoading} />
     </div>
   );
 };

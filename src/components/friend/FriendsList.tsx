@@ -4,6 +4,7 @@ import { remoteUrl } from '../../types/constant';
 import { toast } from "react-toastify";
 import InputField from '../InputField';
 import { Search, ChevronDown, ChevronUp } from 'lucide-react'; 
+import { LoadingDialog } from '../Dialog';
 
 interface Friend {
   _id: string;
@@ -145,6 +146,7 @@ const FriendsList = () => {
       ) : (
         <p className="text-gray-500">Không tìm thấy bạn bè</p>
       )}
+      <LoadingDialog isVisible={isLoading} />
     </div>
   );
 };
