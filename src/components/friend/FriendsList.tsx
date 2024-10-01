@@ -105,7 +105,7 @@ const FriendsList = () => {
           />
         </div>
 
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 -mt-2">
           <button
             className="flex items-center border border-gray-300 px-2 py-2 rounded-md focus:outline-none hover:bg-gray-100 h-10" 
             onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}

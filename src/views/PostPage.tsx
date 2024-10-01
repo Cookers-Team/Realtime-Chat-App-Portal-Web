@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import NavBar from '../components/NavBar';
 import MyPosts from '../components/post/MyPosts';  
-import FriendsPosts from '../components/post/friendsPosts';  
+import FriendsPosts from '../components/post/FriendsPosts';  
 import SavedPosts from '../components/post/SavedPosts';  
 import { Search, Bookmark, FileText, Users } from 'lucide-react'; 
 
@@ -25,7 +25,7 @@ const PostPage = () => {
   return (
     <div className="flex h-screen">
 
-      <NavBar setSelectedSection={() => {}} />
+      <NavBar setSelectedSection={setSelectedSection} />
 
    
       <div className="w-1/5 bg-gray-200 p-4 flex flex-col justify-start h-screen sticky top-0"> 
@@ -47,10 +47,6 @@ const PostPage = () => {
         <div className="mb-2 flex items-center cursor-pointer hover:bg-gray-300 p-2 rounded-md" onClick={() => setSelectedSection('friendsPosts')}>
           <Users size={24} className="mr-2" />
           <p className="text-lg">Bài đăng bạn bè</p>
-        </div>
-        <div className="mb-2 flex items-center cursor-pointer hover:bg-gray-300 p-2 rounded-md" onClick={() => setSelectedSection('savedPosts')}>
-          <Bookmark size={24} className="mr-2" />
-          <p className="text-lg">Bài đăng đã lưu</p>
         </div>
       </div>
 
