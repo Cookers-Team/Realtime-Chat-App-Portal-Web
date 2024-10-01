@@ -11,7 +11,7 @@ const NavBar = ({ setSelectedSection }: { setSelectedSection: (section: string) 
     <div className="w-16 bg-blue-500 text-white flex flex-col items-center py-6 space-y-6">
       <button
         data-tooltip-id="tooltip-profile"
-        data-tooltip-content="Profile"
+        data-tooltip-content="Trang cá nhân"
         className="focus:outline-none"
         onClick={() => navigate('/profile')} 
       >
@@ -20,7 +20,7 @@ const NavBar = ({ setSelectedSection }: { setSelectedSection: (section: string) 
 
       <button
         data-tooltip-id="tooltip-messages"
-        data-tooltip-content="Messages"
+        data-tooltip-content="Tin nhắn"
         onClick={() => setSelectedSection('messages')}
         className="focus:outline-none"
       >
@@ -29,7 +29,7 @@ const NavBar = ({ setSelectedSection }: { setSelectedSection: (section: string) 
 
       <button
         data-tooltip-id="tooltip-posts"
-        data-tooltip-content="Posts"
+        data-tooltip-content="Bài đăng"
         onClick={() => navigate('/postPage')}
         className="focus:outline-none"
       >
@@ -38,7 +38,7 @@ const NavBar = ({ setSelectedSection }: { setSelectedSection: (section: string) 
 
       <button
         data-tooltip-id="tooltip-friends"
-        data-tooltip-content="Friends"
+        data-tooltip-content="Bạn bè"
         onClick={() => navigate('/friends')} 
         className="focus:outline-none"
       >
@@ -47,19 +47,19 @@ const NavBar = ({ setSelectedSection }: { setSelectedSection: (section: string) 
 
       <button
         data-tooltip-id="tooltip-settings"
-        data-tooltip-content="Settings"
+        data-tooltip-content="cài đặt"
         onClick={() => setSelectedSection('settings')}
         className="focus:outline-none"
       >
         <Settings size={24} className="hover:scale-110 transition-transform" />
       </button>
 
-      {/* Các tooltip tương ứng với các icon */}
-      <Tooltip id="tooltip-profile" />
-      <Tooltip id="tooltip-messages" />
-      <Tooltip id="tooltip-posts" />
-      <Tooltip id="tooltip-friends" />
-      <Tooltip id="tooltip-settings" />
+      <Tooltip id="tooltip-profile" style={{ zIndex: 100 }} />
+      <Tooltip id="tooltip-messages" style={{ zIndex: 100 }} />
+      <Tooltip id="tooltip-posts" style={{ zIndex: 100 }} />
+      <Tooltip id="tooltip-friends" style={{ zIndex: 100 }} />
+      <Tooltip id="tooltip-settings" style={{ zIndex: 100 }} />
+
     </div>
   );
 };
