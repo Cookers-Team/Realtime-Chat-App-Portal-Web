@@ -1,5 +1,5 @@
 import React from "react";
-import { MessageCircle, FileText, Users, Settings, User } from "lucide-react";
+import { MessageCircle, FileText, Users, Settings, User, LogOut } from "lucide-react"; // Thêm LogOut
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import { useNavigate } from "react-router-dom";
@@ -15,24 +15,28 @@ const NavBar: React.FC<NavBarProps> = ({
 }) => {
   const navigate = useNavigate();
 
+  const handleLogout = () => {
+    
+    localStorage.removeItem('accessToken'); 
+    navigate('/'); 
+  };
+
   return (
     <div className="w-16 bg-blue-500 text-white flex flex-col items-center py-6 space-y-6">
-      {/* Nút mở Profile */}
+     
       <button
         data-tooltip-id="tooltip-profile"
         data-tooltip-content="Trang cá nhân"
         className="focus:outline-none"
-        onClick={() => setProfileVisible(true)} // Mở modal Profile
+        onClick={() => setProfileVisible(true)} 
       >
         <User size={24} className="hover:scale-110 transition-transform" />
       </button>
 
       <button
         data-tooltip-id="tooltip-messages"
-
         data-tooltip-content="Tin nhắn"
         onClick={() => setSelectedSection('messages')}
-
         className="focus:outline-none"
       >
         <MessageCircle
@@ -52,10 +56,8 @@ const NavBar: React.FC<NavBarProps> = ({
 
       <button
         data-tooltip-id="tooltip-friends"
-
         data-tooltip-content="Bạn bè"
-        onClick={() => navigate('/friends')} 
-
+        onClick={() => navigate('/friends')}
         className="focus:outline-none"
       >
         <Users size={24} className="hover:scale-110 transition-transform" />
@@ -63,13 +65,21 @@ const NavBar: React.FC<NavBarProps> = ({
 
       <button
         data-tooltip-id="tooltip-settings"
-
-        data-tooltip-content="cài đặt"
+        data-tooltip-content="Cài đặt"
         onClick={() => setSelectedSection('settings')}
-
         className="focus:outline-none"
       >
         <Settings size={24} className="hover:scale-110 transition-transform" />
+      </button>
+
+      
+      <button
+        data-tooltip-id="tooltip-logout"
+        data-tooltip-content="Đăng xuất"
+        className="focus:outline-none mt-auto" 
+        onClick={handleLogout} 
+      >
+        <LogOut size={24} className="hover:scale-110 transition-transform" />
       </button>
 
       <Tooltip id="tooltip-profile" style={{ zIndex: 100 }} />
@@ -77,7 +87,7 @@ const NavBar: React.FC<NavBarProps> = ({
       <Tooltip id="tooltip-posts" style={{ zIndex: 100 }} />
       <Tooltip id="tooltip-friends" style={{ zIndex: 100 }} />
       <Tooltip id="tooltip-settings" style={{ zIndex: 100 }} />
-
+      <Tooltip id="tooltip-logout" style={{ zIndex: 100 }} /> 
     </div>
   );
 };
