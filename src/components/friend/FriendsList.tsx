@@ -28,7 +28,7 @@ const FriendsList = () => {
   const fetchFriends = async () => {
     showLoading();
     try {
-      const response = await fetch(`${remoteUrl}/v1/friendship/friends`, {
+      const response = await fetch(`${remoteUrl}/v1/friendship/list`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -43,7 +43,7 @@ const FriendsList = () => {
       }
 
       const data = await response.json();
-      const formattedFriends = data.data
+      const formattedFriends = data.data.content
         .filter((friend: any) => friend.receiver !== null)
         .map((friend: any) => {
           const receiver = friend.receiver;

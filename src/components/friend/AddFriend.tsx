@@ -78,7 +78,7 @@ const AddFriend: React.FC<AddFriendProps> = ({ isOpen, onClose }) => {
  
   const fetchFriendships = async () => {
     try {
-      const response = await fetch(`${remoteUrl}/v1/friendship/friends`, {
+      const response = await fetch(`${remoteUrl}/v1/friendship/list`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -93,7 +93,7 @@ const AddFriend: React.FC<AddFriendProps> = ({ isOpen, onClose }) => {
       }
 
       const data = await response.json();
-      setFriendships(data.data); 
+      setFriendships(data.data.content); 
     } catch (error) {
       toast.error('Đã xảy ra lỗi khi lấy danh sách bạn bè.');
     }
