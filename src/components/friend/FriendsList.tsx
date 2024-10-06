@@ -4,6 +4,7 @@ import { remoteUrl } from '../../types/constant';
 import { toast } from "react-toastify";
 import InputField from '../InputField';
 import { Search, ChevronDown, ChevronUp } from 'lucide-react'; 
+import { LoadingDialog } from '../Dialog';
 
 interface Friend {
   _id: string;
@@ -105,7 +106,7 @@ const FriendsList = () => {
           />
         </div>
 
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 -mt-2">
           <button
             className="flex items-center border border-gray-300 px-2 py-2 rounded-md focus:outline-none hover:bg-gray-100 h-10" 
             onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
@@ -145,6 +146,7 @@ const FriendsList = () => {
       ) : (
         <p className="text-gray-500">Không tìm thấy bạn bè</p>
       )}
+      <LoadingDialog isVisible={isLoading} />
     </div>
   );
 };
