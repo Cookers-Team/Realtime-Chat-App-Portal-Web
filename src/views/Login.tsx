@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useLoading } from "../hooks/useLoading";
 import useForm from "../hooks/useForm";
 import { ToastContainer, toast } from "react-toastify";
-import { EmailPattern, remoteUrl } from "../types/constant";
+import { remoteUrl } from "../types/constant";
 import Button from "../components/Button";
 import { useNavigate } from "react-router-dom";
 import { LoadingDialog } from "../components/Dialog";
@@ -17,25 +17,22 @@ const Login = () => {
   const { isLoading, showLoading, hideLoading } = useLoading();
 
   const [form, setForm] = useState({
-    email: "",
-
+    username: "",
     password: "",
   });
 
   const [errors, setErrors] = useState({
-    email: "",
+    username: "",
     password: "",
   });
   const validate = (field: string, value: string) => {
     const newErrors = { ...errors };
 
-    if (field === "email") {
+    if (field === "username") {
       if (!value.trim()) {
-        newErrors.email = "Email không được bỏ trống";
-      } else if (!EmailPattern.test(value)) {
-        newErrors.email = "Email không hợp lệ";
+        newErrors.username = "Username không được bỏ trống";
       } else {
-        newErrors.email = "";
+        newErrors.username = "";
       }
     }
     if (field === "password") {
@@ -87,7 +84,7 @@ const Login = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            email: form.email,
+            username: form.username,
             password: form.password,
           }),
         });
@@ -100,7 +97,6 @@ const Login = () => {
         await localStorage.setItem("accessToken", data.data.accessToken);
         toast.success("Đăng nhập thành công");
         navigate("/home");
-
       } catch (error: any) {
         toast.error(error.message);
       } finally {
@@ -126,13 +122,13 @@ const Login = () => {
         <div className="max-w-md w-full">
           <h2 className="text-3xl font-bold text-center mb-6">Đăng nhập</h2>
           <InputField
-            title="Email đăng nhập"
+            title="Tên đăng nhập"
             isRequire={true}
-            placeholder="Nhập địa chỉ email"
-            onChangeText={(value: any) => handleChange("email", value)}
-            value={form.email}
+            placeholder="Nhập tên đăng nhập"
+            onChangeText={(value: any) => handleChange("username", value)}
+            value={form.username}
             icon={MailIcon}
-            error={errors.email}
+            error={errors.username}
           />
           <InputField
             title="Mật khẩu"
