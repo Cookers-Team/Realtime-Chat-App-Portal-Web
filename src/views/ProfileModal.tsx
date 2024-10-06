@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { remoteUrl } from "../types/constant";
+import EditProfileModal from "./EditProfileModal";
 
 interface ProfileModalProps {
   isVisible: boolean;
@@ -18,36 +19,42 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isVisible, onClose }) => {
   const [profileData, setProfileData] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [editModalVisible, setEditModalVisible] = useState<boolean>(false);
+
+  const fetchProfile = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("accessToken");
+      const response = await fetch(`${remoteUrl}/v1/user/profile`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Lỗi khi tải thông tin người dùng.");
+      }
+
+      const data = await response.json();
+      setProfileData(data.data);
+    } catch (error: any) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (isVisible) {
-      const fetchProfile = async () => {
-        setLoading(true);
-        try {
-          const token = localStorage.getItem("accessToken");
-          const response = await fetch(`${remoteUrl}/v1/user/profile`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          });
-
-          if (!response.ok) {
-            throw new Error("Lỗi khi tải thông tin người dùng.");
-          }
-
-          const data = await response.json();
-          setProfileData(data.data);
-        } catch (error: any) {
-          setError(error.message);
-        } finally {
-          setLoading(false);
-        }
-      };
-
       fetchProfile();
     }
   }, [isVisible]);
+
+  const handleEditClose = () => {
+    setEditModalVisible(false);
+    fetchProfile(); // Cập nhật lại dữ liệu sau khi chỉnh sửa
+  };
 
   if (!isVisible) return null;
 
@@ -117,11 +124,18 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isVisible, onClose }) => {
         <div className="flex justify-center mt-6">
           <button
             className="bg-blue-500 text-white py-2 px-6 rounded-md hover:bg-blue-600 transition duration-150"
-            // onClick={() => setEditModalVisible(true)}
+            onClick={() => setEditModalVisible(true)}
           >
             Chỉnh sửa
           </button>
         </div>
+
+        {/* {editModalVisible && (
+          <EditProfileModal
+            isVisible={editModalVisible}
+            onClose={handleEditClose}
+          />
+        )} */}
       </div>
     </div>
   );
