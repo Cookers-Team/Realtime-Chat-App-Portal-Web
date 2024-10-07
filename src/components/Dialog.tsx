@@ -70,7 +70,7 @@ const AlertDialog = ({
           className="p-3 rounded-md flex-1 text-white text-center text-lg font-semibold"
           style={{ backgroundColor: color }}
         >
-          OK
+          Xác nhận
         </button>
       </div>
     </ModalForm>

@@ -1,12 +1,21 @@
-import React from "react";
-import { MessageCircle, FileText, Users, Settings, User, LogOut } from "lucide-react"; // Thêm LogOut
+import React, { useState } from "react";
+import {
+  MessageCircle,
+  FileText,
+  Users,
+  Settings,
+  User,
+  LogOut,
+} from "lucide-react"; // Thêm LogOut
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import { useNavigate } from "react-router-dom";
+import { ConfimationDialog } from "./Dialog";
+import useDialog from "../hooks/useDialog";
 
 interface NavBarProps {
   setSelectedSection: (section: string) => void;
-  setProfileVisible: (visible: boolean) => void; // Truyền setProfileVisible từ component cha
+  setProfileVisible: (visible: boolean) => void;
 }
 
 const NavBar: React.FC<NavBarProps> = ({
@@ -14,21 +23,28 @@ const NavBar: React.FC<NavBarProps> = ({
   setProfileVisible,
 }) => {
   const navigate = useNavigate();
+  const { isDialogVisible, showDialog, hideDialog } = useDialog();
 
   const handleLogout = () => {
-    
-    localStorage.removeItem('accessToken'); 
-    navigate('/'); 
+    showDialog();
+  };
+
+  const onConfirmLogout = () => {
+    localStorage.removeItem("accessToken");
+    navigate("/");
+  };
+
+  const onCancelLogout = () => {
+    hideDialog();
   };
 
   return (
     <div className="w-16 bg-blue-500 text-white flex flex-col items-center py-6 space-y-6">
-     
       <button
         data-tooltip-id="tooltip-profile"
         data-tooltip-content="Trang cá nhân"
         className="focus:outline-none"
-        onClick={() => setProfileVisible(true)} 
+        onClick={() => setProfileVisible(true)}
       >
         <User size={24} className="hover:scale-110 transition-transform" />
       </button>
@@ -36,7 +52,7 @@ const NavBar: React.FC<NavBarProps> = ({
       <button
         data-tooltip-id="tooltip-messages"
         data-tooltip-content="Tin nhắn"
-        onClick={() => setSelectedSection('messages')}
+        onClick={() => setSelectedSection("messages")}
         className="focus:outline-none"
       >
         <MessageCircle
@@ -48,7 +64,7 @@ const NavBar: React.FC<NavBarProps> = ({
       <button
         data-tooltip-id="tooltip-posts"
         data-tooltip-content="Bài đăng"
-        onClick={() => navigate('/postPage')}
+        onClick={() => navigate("/postPage")}
         className="focus:outline-none"
       >
         <FileText size={24} className="hover:scale-110 transition-transform" />
@@ -57,7 +73,7 @@ const NavBar: React.FC<NavBarProps> = ({
       <button
         data-tooltip-id="tooltip-friends"
         data-tooltip-content="Bạn bè"
-        onClick={() => navigate('/friends')}
+        onClick={() => navigate("/friends")}
         className="focus:outline-none"
       >
         <Users size={24} className="hover:scale-110 transition-transform" />
@@ -66,28 +82,36 @@ const NavBar: React.FC<NavBarProps> = ({
       <button
         data-tooltip-id="tooltip-settings"
         data-tooltip-content="Cài đặt"
-        onClick={() => setSelectedSection('settings')}
+        onClick={() => setSelectedSection("settings")}
         className="focus:outline-none"
       >
         <Settings size={24} className="hover:scale-110 transition-transform" />
       </button>
 
-      
       <button
         data-tooltip-id="tooltip-logout"
         data-tooltip-content="Đăng xuất"
-        className="focus:outline-none mt-auto" 
-        onClick={handleLogout} 
+        className="focus:outline-none mt-auto"
+        onClick={handleLogout}
       >
         <LogOut size={24} className="hover:scale-110 transition-transform" />
       </button>
+
+      <ConfimationDialog
+        isVisible={isDialogVisible}
+        title="Xác nhận"
+        message="Bạn có chắc chắn muốn đăng xuất?"
+        onConfirm={onConfirmLogout}
+        onCancel={onCancelLogout}
+        confirmText="Đăng xuất"
+      />
 
       <Tooltip id="tooltip-profile" style={{ zIndex: 100 }} />
       <Tooltip id="tooltip-messages" style={{ zIndex: 100 }} />
       <Tooltip id="tooltip-posts" style={{ zIndex: 100 }} />
       <Tooltip id="tooltip-friends" style={{ zIndex: 100 }} />
       <Tooltip id="tooltip-settings" style={{ zIndex: 100 }} />
-      <Tooltip id="tooltip-logout" style={{ zIndex: 100 }} /> 
+      <Tooltip id="tooltip-logout" style={{ zIndex: 100 }} />
     </div>
   );
 };

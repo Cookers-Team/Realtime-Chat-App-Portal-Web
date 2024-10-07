@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { remoteUrl } from "../types/constant";
+import {
+  UserCircle,
+  Phone,
+  Mail,
+  Book,
+  X,
+  Edit2,
+  Calendar,
+} from "lucide-react";
 import EditProfileModal from "./EditProfileModal";
 
 interface ProfileModalProps {
@@ -11,8 +20,10 @@ interface UserProfile {
   displayName: string;
   email: string;
   phone: string;
+  studentId: string;
   bio: string;
   avatarUrl: string;
+  birthDate: string;
 }
 
 const ProfileModal: React.FC<ProfileModalProps> = ({ isVisible, onClose }) => {
@@ -37,7 +48,16 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isVisible, onClose }) => {
       }
 
       const data = await response.json();
-      setProfileData(data.data);
+      const dateOfBirth = data.data.dateOfBirth;
+
+      const formattedDateOfBirth = dateOfBirth
+        ? dateOfBirth.split(" ")[0]
+        : null;
+
+      setProfileData({
+        ...data.data,
+        dateOfBirth: formattedDateOfBirth,
+      });
     } catch (error: any) {
       setError(error.message);
     } finally {
@@ -53,89 +73,109 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isVisible, onClose }) => {
 
   const handleEditClose = () => {
     setEditModalVisible(false);
-    fetchProfile(); // Cập nhật lại dữ liệu sau khi chỉnh sửa
+    fetchProfile();
   };
 
   if (!isVisible) return null;
 
+  const InfoItem = ({
+    icon: Icon,
+    label,
+    value,
+  }: {
+    icon: any;
+    label: string;
+    value: string;
+  }) => (
+    <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+      <div className="bg-blue-100 p-2 rounded-full">
+        <Icon className="w-5 h-5 text-blue-600" />
+      </div>
+      <div>
+        <p className="text-sm text-gray-500">{label}</p>
+        <p className="font-medium text-gray-800">{value || "Chưa có"}</p>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
-      <div className="bg-white rounded-lg w-11/12 md:w-1/3 p-6 relative shadow-xl transition-transform transform hover:scale-105">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-xl w-11/12 md:w-[480px] p-6 relative shadow-2xl transition-all duration-300 ease-in-out transform hover:scale-[1.02]">
         <button
-          className="absolute top-2 right-2 text-gray-600 hover:text-gray-900 transition duration-150"
+          className="absolute top-4 right-4 p-1 rounded-full hover:bg-gray-100 transition-colors duration-200"
           onClick={onClose}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
+          <X className="w-6 h-6 text-gray-500" />
         </button>
 
-        <h2 className="text-2xl font-semibold mb-4 text-center text-blue-600">
+        <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">
           Thông tin cá nhân
         </h2>
 
-        {loading && <p className="text-center text-blue-500">Đang tải...</p>}
-        {error && <p className="text-red-500 text-center">{error}</p>}
+        {loading && (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
+        )}
+
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+            {error}
+          </div>
+        )}
 
         {profileData && (
           <div className="flex flex-col items-center">
-            <img
-              src={profileData.avatarUrl}
-              alt="Avatar"
-              className="rounded-full w-28 h-28 mb-4 object-cover border-4 border-blue-300 shadow-lg"
-            />
+            <div className="relative mb-6">
+              <img
+                src={profileData.avatarUrl || "https://via.placeholder.com/112"}
+                alt="Avatar"
+                className="rounded-full w-28 h-28 object-cover border-4 border-blue-100 shadow-lg"
+              />
+            </div>
 
-            <h3 className="text-xl font-semibold text-gray-800">
-              {profileData.displayName || "Chưa có"}
+            <h3 className="text-2xl font-bold text-gray-800 mb-6">
+              {profileData.displayName || "Chưa có tên"}
             </h3>
 
-            <div className="mt-4 text-center space-y-2 w-full">
-              <div>
-                <p className="text-gray-600">Số điện thoại:</p>
-                <p className="font-medium">{profileData.phone || "Chưa có"}</p>
-              </div>
+            <div className="w-full space-y-3">
+              <InfoItem icon={Mail} label="Email" value={profileData.email} />
+              <InfoItem
+                icon={Phone}
+                label="Số điện thoại"
+                value={profileData.phone}
+              />
+              <InfoItem
+                icon={UserCircle}
+                label="MSSV"
+                value={profileData.studentId}
+              />
+              <InfoItem
+                icon={Calendar}
+                label="Ngày sinh"
+                value={profileData.birthDate}
+              />
 
-              <div>
-                <p className="text-gray-600">Email:</p>
-                <p className="font-medium">{profileData.email || "Chưa có"}</p>
-              </div>
-
-              <div>
-                <p className="text-gray-600">Tiểu sử:</p>
-                <p className="font-medium">
-                  {profileData.bio || "Chưa có tiểu sử"}
-                </p>
-              </div>
+              <InfoItem icon={Book} label="Tiểu sử" value={profileData.bio} />
             </div>
           </div>
         )}
 
-        <div className="flex justify-center mt-6">
+        <div className="flex justify-center mt-8">
           <button
-            className="bg-blue-500 text-white py-2 px-6 rounded-md hover:bg-blue-600 transition duration-150"
+            className="bg-blue-500 text-white py-3 px-8 rounded-lg font-semibold hover:bg-blue-600 transition duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
             onClick={() => setEditModalVisible(true)}
           >
-            Chỉnh sửa
+            Chỉnh sửa thông tin
           </button>
         </div>
 
-        {/* {editModalVisible && (
+        {editModalVisible && (
           <EditProfileModal
             isVisible={editModalVisible}
             onClose={handleEditClose}
           />
-        )} */}
+        )}
       </div>
     </div>
   );
