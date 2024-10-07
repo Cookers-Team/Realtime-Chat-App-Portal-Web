@@ -29,7 +29,7 @@ const ConfimationDialog = ({
       isVisible={isVisible}
       title={title}
       message={message}
-      color={color}  
+      color={color}
     >
       <div className="flex gap-2 w-full">
         <button
@@ -70,7 +70,7 @@ const AlertDialog = ({
           className="p-3 rounded-md flex-1 text-white text-center text-lg font-semibold"
           style={{ backgroundColor: color }}
         >
-          OK
+          Xác nhận
         </button>
       </div>
     </ModalForm>
