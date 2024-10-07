@@ -29,7 +29,7 @@ const ConfimationDialog = ({
       isVisible={isVisible}
       title={title}
       message={message}
-      color={color}
+      color={color}  
     >
       <div className="flex gap-2 w-full">
         <button
