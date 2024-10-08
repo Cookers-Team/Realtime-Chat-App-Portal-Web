@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { EmailPattern, remoteUrl } from "../types/constant";
+import { EmailPattern, remoteUrl } from "../../types/constant";
 import {
   X,
   Loader,
@@ -13,12 +13,14 @@ import {
   LockIcon,
   ShieldCheckIcon,
 } from "lucide-react";
-import { AlertDialog } from "../components/Dialog";
-import InputField from "../components/InputField";
-import useForm from "../hooks/useForm";
-import { uploadImage } from "../types/utils";
+import { AlertDialog } from "../Dialog";
+import InputField from "../InputField";
+import useForm from "../../hooks/useForm";
+import { uploadImage } from "../../types/utils";
 import { useNavigate } from "react-router-dom";
-import useFetch from "../hooks/useFetch";
+import useFetch from "../../hooks/useFetch";
+import VerificationModal from "./VerificationModal";
+import OTPModal from "./OTPModal";
 
 interface EditProfileModalProps {
   isVisible: boolean;
@@ -547,129 +549,33 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
         </form>
       </div>
 
-      {/* Modal xác thực mật khẩu */}
-      {showVerificationModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-xl w-96 p-6 relative">
-            <h3 className="text-xl font-bold mb-4">Xác thực mật khẩu</h3>
-            <p className="mb-4 text-gray-600">
-              Để thay đổi thông tin này, vui lòng nhập mật khẩu của bạn
-            </p>
+      <VerificationModal
+        isVisible={showVerificationModal}
+        onClose={() => setShowVerificationModal(false)}
+        onSubmit={handleSendOTP}
+        loading={loading}
+        error={errorOTP}
+        sensitiveFieldToEdit={sensitiveFieldToEdit}
+        tempSensitiveValue={tempSensitiveValue}
+        setTempSensitiveValue={setTempSensitiveValue}
+        verificationForm={verificationForm}
+        handleVerificationChange={handleVerificationChange}
+        verificationErrors={verificationErrors}
+      />
 
-            {errorOTP && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-                {errorOTP}
-              </div>
-            )}
-
-            <InputField
-              title="Mật khẩu hiện tại"
-              isRequire={true}
-              placeholder="Nhập mật khẩu"
-              onChangeText={(value: any) =>
-                handleVerificationChange("currentPassword", value)
-              }
-              value={verificationForm.currentPassword}
-              icon={LockIcon}
-              error={verificationErrors.currentPassword}
-              secureTextEntry={true}
-            />
-
-            <InputField
-              title={`${
-                sensitiveFieldToEdit === "email"
-                  ? "Email"
-                  : sensitiveFieldToEdit === "phone"
-                  ? "Số điện thoại"
-                  : "MSSV"
-              } mới`}
-              isRequire={true}
-              placeholder={`Nhập ${sensitiveFieldToEdit} mới`}
-              onChangeText={setTempSensitiveValue}
-              value={tempSensitiveValue}
-              icon={
-                sensitiveFieldToEdit === "email"
-                  ? MailIcon
-                  : sensitiveFieldToEdit === "phone"
-                  ? PhoneIcon
-                  : IdCardIcon
-              }
-            />
-
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                type="button"
-                onClick={() => setShowVerificationModal(false)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleSendOTP}
-                disabled={loading}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center justify-center disabled:opacity-50"
-              >
-                {loading ? (
-                  <Loader className="w-5 h-5 animate-spin" />
-                ) : (
-                  "Gửi mã OTP"
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal nhập OTP */}
-      {showOTPModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-xl w-96 p-6 relative">
-            <h3 className="text-xl font-bold mb-4">Xác thực OTP</h3>
-            <p className="mb-4 text-gray-600">
-              Vui lòng nhập mã OTP đã được gửi đến{" "}
-              {sensitiveFieldToEdit === "email"
-                ? `Vui lòng nhập mã OTP đã được gửi đến email mới: ${tempSensitiveValue}`
-                : `Vui lòng nhập mã OTP đã được gửi đến email hiện tại: ${form.email}`}
-            </p>
-
-            {errorOTP && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-                {errorOTP}
-              </div>
-            )}
-
-            <InputField
-              title="Mã OTP"
-              isRequire={true}
-              placeholder="Nhập mã OTP"
-              onChangeText={(value: any) => handleOTPChange("otp", value)}
-              value={otpForm.otp}
-              error={otpErrors.otp}
-            />
-
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                type="button"
-                onClick={() => setShowOTPModal(false)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleVerifyOTP}
-                disabled={loading}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center justify-center disabled:opacity-50"
-              >
-                {loading ? (
-                  <Loader className="w-5 h-5 animate-spin" />
-                ) : (
-                  "Xác nhận"
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <OTPModal
+        isVisible={showOTPModal}
+        onClose={() => setShowOTPModal(false)}
+        onSubmit={handleVerifyOTP}
+        loading={loading}
+        error={errorOTP}
+        sensitiveFieldToEdit={sensitiveFieldToEdit}
+        tempSensitiveValue={tempSensitiveValue}
+        form={form}
+        otpForm={otpForm}
+        handleOTPChange={handleOTPChange}
+        otpErrors={otpErrors}
+      />
 
       <AlertDialog
         isVisible={isAlertVisible}

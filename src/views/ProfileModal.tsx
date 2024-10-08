@@ -9,7 +9,7 @@ import {
   Edit2,
   Calendar,
 } from "lucide-react";
-import EditProfileModal from "./EditProfileModal";
+import EditProfileModal from "../components/modal/EditProfileModal";
 
 interface ProfileModalProps {
   isVisible: boolean;
