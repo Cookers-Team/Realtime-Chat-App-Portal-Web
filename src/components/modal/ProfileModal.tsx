@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { remoteUrl } from "../types/constant";
+import { remoteUrl } from "../../types/constant";
 import {
   UserCircle,
   Phone,
@@ -9,7 +9,8 @@ import {
   Edit2,
   Calendar,
 } from "lucide-react";
-import EditProfileModal from "../components/modal/EditProfileModal";
+import EditProfileModal from "./EditProfileModal";
+import { getDate } from "../../types/utils";
 
 interface ProfileModalProps {
   isVisible: boolean;
@@ -48,15 +49,10 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isVisible, onClose }) => {
       }
 
       const data = await response.json();
-      const dateOfBirth = data.data.dateOfBirth;
-
-      const formattedDateOfBirth = dateOfBirth
-        ? dateOfBirth.split(" ")[0]
-        : null;
 
       setProfileData({
         ...data.data,
-        dateOfBirth: formattedDateOfBirth,
+        birthDate: data.data.birthDate ? getDate(data.data.birthDate) : null,
       });
     } catch (error: any) {
       setError(error.message);
@@ -108,7 +104,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isVisible, onClose }) => {
           <X className="w-6 h-6 text-gray-500" />
         </button>
 
-        <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">
+        <h2 className="text-2xl font-bold mb-6 text-center text-blue-500">
           Thông tin cá nhân
         </h2>
 
