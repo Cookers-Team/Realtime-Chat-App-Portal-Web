@@ -1,6 +1,7 @@
 import { CalendarIcon } from "lucide-react";
 import DatePicker from "react-datepicker";
 import { format, parse } from "date-fns";
+import "react-datepicker/dist/react-datepicker.css";
 
 const DatePickerField = ({
   title,

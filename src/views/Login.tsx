@@ -124,7 +124,7 @@ const Login = () => {
           <InputField
             title="Tên đăng nhập"
             isRequire={true}
-            placeholder="Nhập tên đăng nhập"
+            placeholder="Nhập email, SĐT hoặc MSSV"
             onChangeText={(value: any) => handleChange("username", value)}
             value={form.username}
             icon={MailIcon}
