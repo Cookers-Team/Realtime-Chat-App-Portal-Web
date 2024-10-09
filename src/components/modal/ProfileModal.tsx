@@ -10,6 +10,7 @@ import {
   Calendar,
 } from "lucide-react";
 import EditProfileModal from "./EditProfileModal";
+import { getDate } from "../../types/utils";
 
 interface ProfileModalProps {
   isVisible: boolean;
@@ -48,15 +49,10 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isVisible, onClose }) => {
       }
 
       const data = await response.json();
-      const dateOfBirth = data.data.dateOfBirth;
-
-      const formattedDateOfBirth = dateOfBirth
-        ? dateOfBirth.split(" ")[0]
-        : null;
 
       setProfileData({
         ...data.data,
-        dateOfBirth: formattedDateOfBirth,
+        birthDate: data.data.birthDate ? getDate(data.data.birthDate) : null,
       });
     } catch (error: any) {
       setError(error.message);

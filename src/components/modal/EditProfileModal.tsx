@@ -16,11 +16,12 @@ import {
 import { AlertDialog } from "../Dialog";
 import InputField from "../InputField";
 import useForm from "../../hooks/useForm";
-import { uploadImage } from "../../types/utils";
+import { getDate, uploadImage } from "../../types/utils";
 import { useNavigate } from "react-router-dom";
 import useFetch from "../../hooks/useFetch";
 import VerificationModal from "./VerificationModal";
 import OTPModal from "./OTPModal";
+import DatePickerField from "../DatePickerField";
 
 interface EditProfileModalProps {
   isVisible: boolean;
@@ -158,6 +159,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
       const data = await response.json();
       setForm({
         ...data.data,
+        // birthDate: data.data.birthDate ? getDate(data.data.birthDate) : null,
         currentPassword: "",
         newPassword: "",
         confirmPassword: "",
@@ -190,6 +192,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
       if (showPasswordFields) {
         dataToSend = {
           ...dataToSend,
+          // birthDate: form.birthDate ? `${form.birthDate} 07:00:00` : null,
           currentPassword: form.currentPassword,
           newPassword: form.newPassword,
         };
@@ -197,7 +200,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
       delete dataToSend.confirmPassword;
 
-      // console.log("Data to send", dataToSend);
+      console.log("Data to send", dataToSend);
       const response = await fetch(`${remoteUrl}/v1/user/update-profile`, {
         method: "PUT",
         headers: {
@@ -415,6 +418,14 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
             value={form.bio}
             icon={InfoIcon}
           />
+
+          {/* <DatePickerField
+            title="Ngày sinh"
+            value={form.birthDate}
+            onChangeDate={(value: any) => handleChange("birthDate", value)}
+            maxDate={new Date()}
+            placeholder="Chọn ngày sinh"
+          /> */}
 
           {/* Sensitive fields */}
           <div
