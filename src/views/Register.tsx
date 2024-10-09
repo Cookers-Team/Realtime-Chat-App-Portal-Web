@@ -4,7 +4,13 @@ import InputField from "../components/InputField";
 import Button from "../components/Button";
 import { EmailPattern, PhonePattern, remoteUrl } from "../types/constant";
 import { ToastContainer, toast } from "react-toastify";
-import { LockIcon, MailIcon, PhoneIcon, ContactIcon } from "lucide-react";
+import {
+  LockIcon,
+  MailIcon,
+  PhoneIcon,
+  ContactIcon,
+  IdCardIcon,
+} from "lucide-react";
 import UTELogo from "../assets/ute_logo.png";
 import RegisterPageLogo from "../assets/registerpage.png";
 import { useLoading } from "../hooks/useLoading";
@@ -17,6 +23,7 @@ const Register = () => {
     displayName: "",
     email: "",
     phone: "",
+    studentId: "",
     password: "",
     confirmPassword: "",
   });
@@ -25,6 +32,7 @@ const Register = () => {
     displayName: "",
     email: "",
     phone: "",
+    studentId: "",
     password: "",
     confirmPassword: "",
   });
@@ -39,6 +47,14 @@ const Register = () => {
         newErrors.email = "Email không hợp lệ";
       } else {
         newErrors.email = "";
+      }
+    }
+
+    if (field === "studentId") {
+      if (!value.trim()) {
+        newErrors.studentId = "Mã số sinh viên không được bỏ trống";
+      } else {
+        newErrors.studentId = "";
       }
     }
 
@@ -172,14 +188,15 @@ const Register = () => {
             error={errors.email}
           />
           <InputField
-            title="Tên của bạn"
+            title="MSSV"
             isRequire={true}
-            placeholder="Nhập tên hiển thị"
-            onChangeText={(value: any) => handleChange("displayName", value)}
-            value={form.displayName}
-            icon={ContactIcon}
-            error={errors.displayName}
+            placeholder="Nhập mã số sinh viên"
+            onChangeText={(value: any) => handleChange("studentId", value)}
+            value={form.studentId}
+            icon={IdCardIcon}
+            error={errors.studentId}
           />
+
           <InputField
             title="Số điện thoại của bạn"
             isRequire={true}
@@ -189,6 +206,17 @@ const Register = () => {
             value={form.phone}
             error={errors.phone}
           />
+
+          <InputField
+            title="Tên của bạn"
+            isRequire={true}
+            placeholder="Nhập tên hiển thị"
+            onChangeText={(value: any) => handleChange("displayName", value)}
+            value={form.displayName}
+            icon={ContactIcon}
+            error={errors.displayName}
+          />
+
           <InputField
             title="Mật khẩu"
             isRequire={true}

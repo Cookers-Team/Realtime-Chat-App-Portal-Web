@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import NavBar from "../components/NavBar"; // Import NavBar
 import { LoadingDialog } from "../components/Dialog";
-import Profile from "./ProfileModal";
+import Profile from "../components/modal/ProfileModal";
 
 const Home = () => {
   const [selectedSection, setSelectedSection] = useState(""); // Trạng thái để lưu phần được chọn
