@@ -23,6 +23,7 @@ const useForm = (
     form,
     errors,
     setForm,
+    setErrors,
     handleChange,
     isValidForm,
   };

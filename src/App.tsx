@@ -8,7 +8,7 @@ import PostPage from "./views/PostPage";
 import Friend from "./views/Friend";
 import Chat from "./views/Chat";
 import PrivateRoute from "./components/PrivateRoute";
-import Profile from "./views/ProfileModal";
+import Profile from "./components/modal/ProfileModal";
 
 const App = () => {
   return (
