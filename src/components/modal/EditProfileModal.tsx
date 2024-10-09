@@ -38,7 +38,7 @@ interface ProfileFormData {
   bio: string;
   studentId: string;
   avatarUrl: string;
-  birthDate?: string;
+  birthDate: string | null;
   currentPassword?: string;
   newPassword?: string;
   confirmPassword?: string;
@@ -139,6 +139,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
   useEffect(() => {
     if (isVisible) {
       fetchCurrentProfile();
+      console.log("Fetch current profile", form);
     }
   }, [isVisible]);
 
@@ -159,11 +160,12 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
       const data = await response.json();
       setForm({
         ...data.data,
-        // birthDate: data.data.birthDate ? getDate(data.data.birthDate) : null,
+        birthDate: data.data.birthDate ? getDate(data.data.birthDate) : null,
         currentPassword: "",
         newPassword: "",
         confirmPassword: "",
       });
+      console.log("Fetch current profile", form);
     } catch (error) {
       setError("Lỗi khi tải thông tin người dùng");
     }
@@ -187,12 +189,14 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
       }
 
       // console.log("Form", form.avatarUrl);
-      let dataToSend = { ...form };
+      let dataToSend = {
+        ...form,
+        birthDate: form.birthDate ? `${form.birthDate} 07:00:00` : null,
+      };
 
       if (showPasswordFields) {
         dataToSend = {
           ...dataToSend,
-          // birthDate: form.birthDate ? `${form.birthDate} 07:00:00` : null,
           currentPassword: form.currentPassword,
           newPassword: form.newPassword,
         };
@@ -419,13 +423,13 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
             icon={InfoIcon}
           />
 
-          {/* <DatePickerField
+          <DatePickerField
             title="Ngày sinh"
             value={form.birthDate}
             onChangeDate={(value: any) => handleChange("birthDate", value)}
             maxDate={new Date()}
             placeholder="Chọn ngày sinh"
-          /> */}
+          />
 
           {/* Sensitive fields */}
           <div
