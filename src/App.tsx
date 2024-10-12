@@ -15,11 +15,19 @@ const App = () => {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/verify" element={<Verify />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/*" element={<NotFound />} />
+        <Route
+          path="/"
+          element={
+            <PrivateRoute>
+              <Home />
+            </PrivateRoute>
+          }
+        />
         <Route
           path="/home"
           element={
