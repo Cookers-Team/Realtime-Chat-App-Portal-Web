@@ -31,7 +31,7 @@ const NavBar: React.FC<NavBarProps> = ({
 
   const onConfirmLogout = () => {
     localStorage.removeItem("accessToken");
-    navigate("/");
+    navigate("/login");
   };
 
   const onCancelLogout = () => {
