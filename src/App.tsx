@@ -7,61 +7,58 @@ import Verify from "./views/Verify";
 import PostPage from "./views/PostPage";
 import Friend from "./views/Friend";
 import Chat from "./views/Chat";
-import PrivateRoute from "./components/PrivateRoute";
-import Profile from "./components/modal/ProfileModal";
 import NotFound from "./views/NotFound";
+import Loading from "./views/Loading";
+import { useEffect, useState } from "react";
+import useFetch from "./hooks/useFetch";
 
 const App = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { post, loading } = useFetch();
+
+  useEffect(() => {
+    const checkToken = async () => {
+      const token = await localStorage.getItem("accessToken");
+      const res = await post("/v1/user/verify-token", { accessToken: token });
+      if (res.result) {
+        setIsAuthenticated(true);
+      } else {
+        await localStorage.removeItem("accessToken");
+        setIsAuthenticated(false);
+      }
+    };
+    checkToken();
+  }, []);
+
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/verify" element={<Verify />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/*" element={<NotFound />} />
-        <Route
-          path="/"
-          element={
-            <PrivateRoute>
-              <Home />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/home"
-          element={
-            <PrivateRoute>
-              <Home />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/friends"
-          element={
-            <PrivateRoute>
-              <Friend />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/chat"
-          element={
-            <PrivateRoute>
-              <Chat />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/postPage"
-          element={
-            <PrivateRoute>
-              <PostPage />
-            </PrivateRoute>
-          }
-        />
-      </Routes>
-    </BrowserRouter>
+    <>
+      {loading ? (
+        <Loading />
+      ) : (
+        <>
+          <BrowserRouter>
+            <Routes>
+              {isAuthenticated ? (
+                <>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/friends" element={<Friend />} />
+                  <Route path="/chat" element={<Chat />} />
+                  <Route path="/postPage" element={<PostPage />} />
+                </>
+              ) : (
+                <>
+                  <Route path="/" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/verify" element={<Verify />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                </>
+              )}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </>
+      )}
+    </>
   );
 };
 
