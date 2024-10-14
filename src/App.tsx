@@ -6,7 +6,6 @@ import Home from "./views/Home";
 import Verify from "./views/Verify";
 import PostPage from "./views/PostPage";
 import Friend from "./views/Friend";
-import Chat from "./views/Chat";
 import NotFound from "./views/NotFound";
 import Loading from "./views/Loading";
 import { useEffect, useState } from "react";
@@ -42,7 +41,6 @@ const App = () => {
                 <>
                   <Route path="/" element={<Home />} />
                   <Route path="/friends" element={<Friend />} />
-                  <Route path="/chat" element={<Chat />} />
                   <Route path="/postPage" element={<PostPage />} />
                 </>
               ) : (
