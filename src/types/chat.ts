@@ -9,6 +9,7 @@ interface Conversation {
     };
   };
   avatarUrl: string;
+  totalMembers: number;
 }
 
 interface Message {
@@ -19,13 +20,15 @@ interface Message {
     avatarUrl: string;
   };
   content: string;
-  createAt: string;
+  createdAt: string;
 }
 
 interface ChatWindowProps {
   conversation: {
     _id: string;
     name: string;
+    avatarUrl: string;
+    totalMembers: number;
   };
 }
 export type { Conversation, Message, ChatWindowProps };
