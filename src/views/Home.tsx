@@ -1,45 +1,72 @@
-import React, { useState } from "react";
-import NavBar from "../components/NavBar"; // Import NavBar
+import React, { useState, useEffect } from "react";
+import NavBar from "../components/NavBar";
 import { LoadingDialog } from "../components/Dialog";
 import Profile from "../components/modal/ProfileModal";
+import ChatList from "../components/chat/ChatList";
+import ChatWindow from "../components/chat/ChatWindow";
+import axios from "axios";
+import useFetch from "../hooks/useFetch";
+
+type Conversation = {
+  _id: string;
+  name: string;
+  lastMessage: {
+    content: string;
+    createdAt: string;
+  };
+};
 
 const Home = () => {
-  const [selectedSection, setSelectedSection] = useState(""); // Trạng thái để lưu phần được chọn
+  const [selectedSection, setSelectedSection] = useState("messages");
   const [isProfileVisible, setProfileVisible] = useState(false);
+  const [conversations, setConversations] = useState([]);
+  const [selectedConversation, setSelectedConversation] =
+    useState<Conversation | null>(null);
+
+  const [isLoading, setIsLoading] = useState(false);
+  const { get, post } = useFetch();
+
+  useEffect(() => {
+    if (selectedSection === "messages") {
+      fetchConversations();
+    }
+  }, [selectedSection]);
+
+  const fetchConversations = async () => {
+    setIsLoading(true);
+    try {
+      const response = await get("/v1/conversation/list");
+      console.log(response.data.content);
+      setConversations(response.data.content);
+    } catch (error) {
+      console.error("Error fetching conversations:", error);
+    }
+    setIsLoading(false);
+  };
+
   return (
     <div className="flex h-screen">
-      {/* Phần 1: Thanh điều hướng (NavBar) */}
       <NavBar
         setSelectedSection={setSelectedSection}
         setProfileVisible={setProfileVisible}
       />
-      {/* Hiển thị modal Profile khi cần */}
       {isProfileVisible && (
         <Profile
           isVisible={isProfileVisible}
           onClose={() => setProfileVisible(false)}
         />
       )}
-      {/* Phần 2: Khu vực tìm kiếm */}
-      <div className="w-1/5 bg-gray-200 p-4">
-        <div className="relative mb-4">
-          <input
-            type="text"
-            placeholder="Tìm kiếm"
-            className="pl-10 py-2 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <p className="text-gray-600">
-          Dùng ô tìm kiếm để tìm tin nhắn, bạn bè, bài đăng...
-        </p>
-      </div>
-      {/* Phần 3: Khu vực hiển thị nội dung */}
-      <div className="w-4/5 bg-white p-4">
+      <div className="w-1/4 bg-gray-200 p-4">
         {selectedSection === "messages" && (
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Tin nhắn</h2>
-            <p>Hiển thị nội dung tin nhắn tại đây...</p>
-          </div>
+          <ChatList
+            conversations={conversations}
+            onSelectConversation={setSelectedConversation}
+          />
+        )}
+      </div>
+      <div className="w-3/4 bg-white p-4">
+        {selectedSection === "messages" && selectedConversation && (
+          <ChatWindow conversation={selectedConversation} />
         )}
         {selectedSection === "posts" && (
           <div>
@@ -53,15 +80,8 @@ const Home = () => {
             <p>Hiển thị các cài đặt tại đây...</p>
           </div>
         )}
-        {selectedSection === "" && (
-          <div>
-            <h2 className="text-xl font-semibold mb-4">
-              Chọn một mục từ thanh điều hướng
-            </h2>
-          </div>
-        )}
       </div>
-      <LoadingDialog isVisible={false} />
+      <LoadingDialog isVisible={isLoading} />
     </div>
   );
 };
