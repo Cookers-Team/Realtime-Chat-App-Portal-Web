@@ -20,11 +20,11 @@ const ChatItem: React.FC<ChatItemProps> = ({ conversation, onClick }) => {
       <div className="flex-1 max-w-72">
         <h3 className="font-semibold flex justify-between">
           {conversation.name}
-          <span className="text-xs text-gray-500 ml-auto">
+          <span className="text-xs text-gray-500 ml-auto mt-1">
             {conversation.lastMessage.createdAt}
           </span>
         </h3>
-        <p className="text-sm text-gray-600 truncate">
+        <p className="text-sm text-gray-600 truncate mt-1">
           <span>
             {conversation.lastMessage.user.displayName.length > 15
               ? conversation.lastMessage.user.displayName.slice(0, 15) + "..."

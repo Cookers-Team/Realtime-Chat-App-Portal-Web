@@ -13,7 +13,7 @@ const ChatList: React.FC<ChatListProps> = ({
 }) => {
   return (
     <div className="overflow-y-auto h-full">
-      <h2 className="text-xl font-semibold mb-4">Conversations</h2>
+      <h2 className="text-xl font-semibold mb-4">Cuộc trò chuyện</h2>
       {conversations.map((conversation) => (
         <ChatItem
           key={conversation._id}
