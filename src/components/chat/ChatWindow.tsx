@@ -111,7 +111,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
       });
       setIsAddMemberModalOpen(false);
       setSelectedFriends([]);
-      // Optionally, you can refresh the conversation details here
     } catch (error) {
       console.error("Error adding members:", error);
     }
@@ -137,10 +136,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
         </div>
         {conversation.kind === 1 && (
           <button
-            onClick={() => {
-              setIsAddMemberModalOpen(true);
-              fetchFriends();
-            }}
+            // onClick={() => {
+            //   setIsAddMemberModalOpen(true);
+            //   fetchFriends();
+            // }}
             className="p-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-colors"
           >
             <UserPlus size={20} />
