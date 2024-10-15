@@ -6,7 +6,7 @@ import {
   Settings,
   User,
   LogOut,
-} from "lucide-react"; // Thêm LogOut
+} from "lucide-react";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import { useNavigate } from "react-router-dom";
@@ -32,6 +32,7 @@ const NavBar: React.FC<NavBarProps> = ({
   const onConfirmLogout = () => {
     localStorage.removeItem("accessToken");
     navigate("/");
+    window.location.reload();
   };
 
   const onCancelLogout = () => {

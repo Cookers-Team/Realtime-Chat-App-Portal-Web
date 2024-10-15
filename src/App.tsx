@@ -1,12 +1,15 @@
-import { useEffect, useState } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Login from "./views/Login";
-import Loading from "./views/Loading";
-import useFetch from "./hooks/useFetch";
-import NotFound from "./views/NotFound";
+import Register from "./views/Register";
+import ForgotPassword from "./views/ForgotPassword";
 import Home from "./views/Home";
-import Friend from "./views/Friend";
+import Verify from "./views/Verify";
 import PostPage from "./views/PostPage";
+import Friend from "./views/Friend";
+import NotFound from "./views/NotFound";
+import Loading from "./views/Loading";
+import { useEffect, useState } from "react";
+import useFetch from "./hooks/useFetch";
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -36,13 +39,16 @@ const App = () => {
             <Routes>
               {isAuthenticated ? (
                 <>
-                  <Route path="/home" element={<Home />} />
+                  <Route path="/" element={<Home />} />
                   <Route path="/friends" element={<Friend />} />
                   <Route path="/postPage" element={<PostPage />} />
                 </>
               ) : (
                 <>
-                  <Route path="/login" element={<Login />} />
+                  <Route path="/" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/verify" element={<Verify />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
                 </>
               )}
               <Route path="*" element={<NotFound />} />

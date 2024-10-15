@@ -94,9 +94,10 @@ const Login = () => {
           return;
         }
         const data = await response.json();
-        await localStorage.setItem("accessToken", data.data.accessToken);
+        localStorage.setItem("accessToken", data.data.accessToken);
         toast.success("Đăng nhập thành công");
-        navigate("/home");
+        navigate("/");
+        window.location.reload();
       } catch (error: any) {
         toast.error(error.message);
       } finally {
