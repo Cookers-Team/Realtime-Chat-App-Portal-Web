@@ -105,7 +105,6 @@ const NavBar: React.FC<NavBarProps> = ({
         onConfirm={onConfirmLogout}
         onCancel={onCancelLogout}
         confirmText="Đăng xuất"
-        color="red"
       />
 
       <Tooltip id="tooltip-profile" style={{ zIndex: 100 }} />
