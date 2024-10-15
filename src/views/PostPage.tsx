@@ -25,17 +25,7 @@ const PostPage = () => {
 
   return (
     <div className="flex h-screen">
-      <NavBar
-        setSelectedSection={setSelectedSection}
-        setProfileVisible={setProfileVisible}
-      />
-
-      {isProfileVisible && (
-        <Profile
-          isVisible={isProfileVisible}
-          onClose={() => setProfileVisible(false)}
-        />
-      )}
+      <NavBar setSelectedSection={setSelectedSection} />
       <div className="w-1/5 bg-gray-200 p-4 flex flex-col justify-start h-screen sticky top-0">
         <div className="relative mb-6">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />

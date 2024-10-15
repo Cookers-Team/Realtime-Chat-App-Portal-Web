@@ -1,20 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { remoteUrl } from "../../types/constant";
-import {
-  UserCircle,
-  Phone,
-  Mail,
-  Book,
-  X,
-  Edit2,
-  Calendar,
-} from "lucide-react";
-import EditProfileModal from "./EditProfileModal";
+import { UserCircle, Phone, Mail, Book, X, Calendar } from "lucide-react";
 import { getDate } from "../../types/utils";
 
 interface ProfileModalProps {
   isVisible: boolean;
   onClose: () => void;
+  onOpenEditModal: () => void;
 }
 
 interface UserProfile {
@@ -27,11 +19,14 @@ interface UserProfile {
   birthDate: string;
 }
 
-const ProfileModal: React.FC<ProfileModalProps> = ({ isVisible, onClose }) => {
+const ProfileModal: React.FC<ProfileModalProps> = ({
+  isVisible,
+  onClose,
+  onOpenEditModal,
+}) => {
   const [profileData, setProfileData] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [editModalVisible, setEditModalVisible] = useState<boolean>(false);
 
   const fetchProfile = async () => {
     setLoading(true);
@@ -67,9 +62,9 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isVisible, onClose }) => {
     }
   }, [isVisible]);
 
-  const handleEditClose = () => {
-    setEditModalVisible(false);
-    fetchProfile();
+  const handleEditClick = () => {
+    onClose();
+    onOpenEditModal();
   };
 
   if (!isVisible) return null;
@@ -151,7 +146,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isVisible, onClose }) => {
                 label="Ngày sinh"
                 value={profileData.birthDate}
               />
-
               <InfoItem icon={Book} label="Tiểu sử" value={profileData.bio} />
             </div>
           </div>
@@ -160,18 +154,11 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isVisible, onClose }) => {
         <div className="flex justify-center mt-8">
           <button
             className="bg-blue-500 text-white py-3 px-8 rounded-lg font-semibold hover:bg-blue-600 transition duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
-            onClick={() => setEditModalVisible(true)}
+            onClick={handleEditClick}
           >
             Chỉnh sửa thông tin
           </button>
         </div>
-
-        {editModalVisible && (
-          <EditProfileModal
-            isVisible={editModalVisible}
-            onClose={handleEditClose}
-          />
-        )}
       </div>
     </div>
   );

@@ -11,7 +11,6 @@ const Friend = () => {
   const [selectedSection, setSelectedSection] = useState("friends");
 
   const [isAddFriendOpen, setIsAddFriendOpen] = useState(false); // Thêm state để kiểm soát modal AddFriend
-  const [isProfileVisible, setProfileVisible] = useState(false);
 
   const renderContent = () => {
     switch (selectedSection) {
@@ -28,16 +27,7 @@ const Friend = () => {
 
   return (
     <div className="flex h-screen">
-      <NavBar
-        setSelectedSection={setSelectedSection}
-        setProfileVisible={setProfileVisible}
-      />
-      {isProfileVisible && (
-        <Profile
-          isVisible={isProfileVisible}
-          onClose={() => setProfileVisible(false)}
-        />
-      )}
+      <NavBar setSelectedSection={setSelectedSection} />
       <div className="w-1/5 bg-gray-200 p-4 flex flex-col justify-start">
         <div className="relative mb-6">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />

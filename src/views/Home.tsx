@@ -6,15 +6,7 @@ import ChatList from "../components/chat/ChatList";
 import ChatWindow from "../components/chat/ChatWindow";
 import axios from "axios";
 import useFetch from "../hooks/useFetch";
-
-type Conversation = {
-  _id: string;
-  name: string;
-  lastMessage: {
-    content: string;
-    createdAt: string;
-  };
-};
+import { Conversation } from "../types/chat";
 
 const Home = () => {
   const [selectedSection, setSelectedSection] = useState("messages");
@@ -46,16 +38,8 @@ const Home = () => {
 
   return (
     <div className="flex h-screen">
-      <NavBar
-        setSelectedSection={setSelectedSection}
-        setProfileVisible={setProfileVisible}
-      />
-      {isProfileVisible && (
-        <Profile
-          isVisible={isProfileVisible}
-          onClose={() => setProfileVisible(false)}
-        />
-      )}
+      <NavBar setSelectedSection={setSelectedSection} />
+
       <div className="w-1/4 bg-gray-200 p-4">
         {selectedSection === "messages" && (
           <ChatList

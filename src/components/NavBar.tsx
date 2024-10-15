@@ -12,18 +12,27 @@ import "react-tooltip/dist/react-tooltip.css";
 import { useNavigate } from "react-router-dom";
 import { ConfimationDialog } from "./Dialog";
 import useDialog from "../hooks/useDialog";
+import ProfileModal from "../components/modal/ProfileModal";
+import EditProfileModal from "../components/modal/EditProfileModal";
 
 interface NavBarProps {
   setSelectedSection: (section: string) => void;
-  setProfileVisible: (visible: boolean) => void;
 }
 
-const NavBar: React.FC<NavBarProps> = ({
-  setSelectedSection,
-  setProfileVisible,
-}) => {
+const NavBar: React.FC<NavBarProps> = ({ setSelectedSection }) => {
+  const [profileModalVisible, setProfileModalVisible] = useState(false);
+  const [editProfileModalVisible, setEditProfileModalVisible] = useState(false);
   const navigate = useNavigate();
   const { isDialogVisible, showDialog, hideDialog } = useDialog();
+
+  const handleProfileClick = () => {
+    setProfileModalVisible(true);
+  };
+
+  const handleOpenEditModal = () => {
+    setProfileModalVisible(false);
+    setEditProfileModalVisible(true);
+  };
 
   const handleLogout = () => {
     showDialog();
@@ -45,7 +54,7 @@ const NavBar: React.FC<NavBarProps> = ({
         data-tooltip-id="tooltip-profile"
         data-tooltip-content="Trang cá nhân"
         className="focus:outline-none"
-        onClick={() => setProfileVisible(true)}
+        onClick={handleProfileClick}
       >
         <User size={24} className="hover:scale-110 transition-transform" />
       </button>
@@ -97,6 +106,22 @@ const NavBar: React.FC<NavBarProps> = ({
       >
         <LogOut size={24} className="hover:scale-110 transition-transform" />
       </button>
+
+      {profileModalVisible && (
+        <ProfileModal
+          isVisible={profileModalVisible}
+          onClose={() => setProfileModalVisible(false)}
+          onOpenEditModal={handleOpenEditModal}
+        />
+      )}
+
+      {editProfileModalVisible && (
+        <EditProfileModal
+          isVisible={editProfileModalVisible}
+          onClose={() => setEditProfileModalVisible(false)}
+          onOpenProfileModal={() => setProfileModalVisible(true)}
+        />
+      )}
 
       <ConfimationDialog
         isVisible={isDialogVisible}
