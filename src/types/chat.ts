@@ -1,6 +1,7 @@
 interface Conversation {
   _id: string;
   name: string;
+  kind: Number;
   lastMessage: {
     content: string;
     createdAt: string;
@@ -27,8 +28,19 @@ interface ChatWindowProps {
   conversation: {
     _id: string;
     name: string;
+    kind: Number;
     avatarUrl: string;
     totalMembers: number;
   };
 }
-export type { Conversation, Message, ChatWindowProps };
+
+interface Friends {
+  _id: string;
+  reciever: {
+    _id: string;
+    displayName: string;
+    avatarUrl: string;
+  };
+}
+
+export type { Conversation, Message, ChatWindowProps, Friends };

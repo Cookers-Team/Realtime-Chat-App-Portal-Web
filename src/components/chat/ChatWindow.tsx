@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import useFetch from "../../hooks/useFetch";
-import { Message } from "../../types/chat";
+import { Message, Friends } from "../../types/chat";
 import { ChatWindowProps } from "../../types/chat";
-import { MoreVertical, Edit, Trash, X, Check } from "lucide-react";
+import { MoreVertical, Edit, Trash, X, Check, UserPlus } from "lucide-react";
 
 const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -10,6 +10,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editedMessage, setEditedMessage] = useState("");
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
+  const [friends, setFriends] = useState<Friends[]>([]);
+  const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
   const { get, post, del, put } = useFetch();
   const [userIdCurrent, setUserIdCurrent] = useState("");
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
@@ -22,11 +25,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  // console.log(
-  //   "Message create value: ",
-  //   messages.map((message) => message.createdAt)
-  // );
 
   const currentUserId = userIdCurrent;
 
@@ -96,22 +94,58 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const fetchFriends = async () => {
+    try {
+      const response = await get("/v1/user/friends");
+      setFriends(response.data);
+    } catch (error) {
+      console.error("Error fetching friends:", error);
+    }
+  };
+
+  const handleAddMember = async () => {
+    try {
+      await post("/v1/conversation/add-members", {
+        conversationId: conversation._id,
+        memberIds: selectedFriends,
+      });
+      setIsAddMemberModalOpen(false);
+      setSelectedFriends([]);
+      // Optionally, you can refresh the conversation details here
+    } catch (error) {
+      console.error("Error adding members:", error);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-gray-100">
-      <div className="bg-white p-4 border-b shadow-sm flex items-center space-x-4">
-        <img
-          src={conversation.avatarUrl || "https://via.placeholder.com/112"}
-          alt="Avatar"
-          className="rounded-full w-12 h-12 object-cover border-4 border-blue-100 shadow-lg"
-        />
-        <div>
-          <h2 className="text-xl font-semibold">{conversation.name}</h2>
-          {conversation.totalMembers > 1 && (
-            <p className="text-sm text-gray-500">
-              {conversation.totalMembers - 1} thành viên
-            </p>
-          )}
+      <div className="bg-white p-4 border-b shadow-sm flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <img
+            src={conversation.avatarUrl || "https://via.placeholder.com/112"}
+            alt="Avatar"
+            className="rounded-full w-12 h-12 object-cover border-4 border-blue-100 shadow-lg"
+          />
+          <div>
+            <h2 className="text-xl font-semibold">{conversation.name}</h2>
+            {conversation.totalMembers > 1 && (
+              <p className="text-sm text-gray-500">
+                {conversation.totalMembers - 1} thành viên
+              </p>
+            )}
+          </div>
         </div>
+        {conversation.kind === 1 && (
+          <button
+            onClick={() => {
+              setIsAddMemberModalOpen(true);
+              fetchFriends();
+            }}
+            className="p-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+          >
+            <UserPlus size={20} />
+          </button>
+        )}
       </div>
       <div className="flex-1 overflow-y-auto p-4">
         {messages
@@ -221,8 +255,53 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
           </button>
         </div>
       </form>
+      {/* Add Member Modal */}
+      {isAddMemberModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-6 w-96">
+            <h3 className="text-xl font-semibold mb-4">Thêm thành viên</h3>
+            <div className="max-h-60 overflow-y-auto">
+              {friends.map((friend) => (
+                <div key={friend._id} className="flex items-center mb-2">
+                  <input
+                    type="checkbox"
+                    id={friend._id}
+                    checked={selectedFriends.includes(friend._id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedFriends([...selectedFriends, friend._id]);
+                      } else {
+                        setSelectedFriends(
+                          selectedFriends.filter((id) => id !== friend._id)
+                        );
+                      }
+                    }}
+                    className="mr-2"
+                  />
+                  <label htmlFor={friend._id}>
+                    {friend.reciever.displayName}
+                  </label>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 flex justify-end space-x-2">
+              <button
+                onClick={() => setIsAddMemberModalOpen(false)}
+                className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 transition-colors"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleAddMember}
+                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+              >
+                Thêm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-
 export default ChatWindow;
