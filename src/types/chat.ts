@@ -36,10 +36,14 @@ interface ChatWindowProps {
 
 interface Friends {
   _id: string;
-  reciever: {
+  friend: {
     _id: string;
     displayName: string;
     avatarUrl: string;
+    lastLogin: string;
+  };
+  conversation: {
+    _id: string;
   };
 }
 

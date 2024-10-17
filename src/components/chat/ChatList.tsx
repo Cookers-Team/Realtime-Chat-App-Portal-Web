@@ -1,6 +1,8 @@
 import React from "react";
 import ChatItem from "./ChatItem";
 import { Conversation } from "../../types/chat";
+import InputField from "../InputField";
+import { Search } from "lucide-react";
 
 interface ChatListProps {
   conversations: Conversation[];
@@ -13,7 +15,7 @@ const ChatList: React.FC<ChatListProps> = ({
 }) => {
   return (
     <div className="overflow-y-auto h-full">
-      <h2 className="text-xl font-semibold mb-4">Cuộc trò chuyện</h2>
+      <h2 className="text-xl font-semibold m-4">Cuộc trò chuyện</h2>
       {conversations.map((conversation) => (
         <ChatItem
           key={conversation._id}

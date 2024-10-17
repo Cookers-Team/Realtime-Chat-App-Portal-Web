@@ -3,6 +3,10 @@ import useFetch from "../../hooks/useFetch";
 import { Message, Friends } from "../../types/chat";
 import { ChatWindowProps } from "../../types/chat";
 import { MoreVertical, Edit, Trash, X, Check, UserPlus } from "lucide-react";
+import { useLoading } from "../../hooks/useLoading";
+import { toast } from "react-toastify";
+import { AlertDialog, AlertErrorDialog, LoadingDialog } from "../Dialog";
+import { set } from "react-datepicker/dist/date_utils";
 
 const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -12,10 +16,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const [friends, setFriends] = useState<Friends[]>([]);
-  const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
+  const [selectedFriends, setSelectedFriends] = useState<string | null>(null);
   const { get, post, del, put } = useFetch();
   const [userIdCurrent, setUserIdCurrent] = useState("");
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
+  const { isLoading, showLoading, hideLoading } = useLoading();
+  const [isAlertDialogOpen, setIsAlertDialogOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isAlertErrorDialogOpen, setIsAlertErrorDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchMessages();
@@ -96,23 +104,44 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
 
   const fetchFriends = async () => {
     try {
-      const response = await get("/v1/user/friends");
-      setFriends(response.data);
+      const response = await get("/v1/friendship/list", {
+        getListKind: 0,
+      });
+      console.log("List ban be:", response.data.content);
+      setFriends(response.data.content);
     } catch (error) {
       console.error("Error fetching friends:", error);
     }
   };
 
   const handleAddMember = async () => {
+    console.log("Selected friends:", selectedFriends);
+    console.log("Conversation:", conversation._id);
+    showLoading();
     try {
-      await post("/v1/conversation/add-members", {
-        conversationId: conversation._id,
-        memberIds: selectedFriends,
+      const response = await post("/v1/conversation-member/add", {
+        conversation: conversation._id,
+        user: selectedFriends,
       });
+      console.log("Response add member:", response.result);
+      if (!response.result) {
+        setErrorMessage(
+          response.message || "Có lỗi xảy ra khi thêm thành viên."
+        );
+        console.error("Error adding members:", response.message);
+        setIsAddMemberModalOpen(false);
+        setIsAlertErrorDialogOpen(true);
+        return;
+      }
       setIsAddMemberModalOpen(false);
-      setSelectedFriends([]);
+      setIsAlertDialogOpen(true);
+      setSelectedFriends(null);
     } catch (error) {
+      setErrorMessage("Có lỗi xảy ra khi thêm thành viên.");
+      setIsAlertErrorDialogOpen(true);
       console.error("Error adding members:", error);
+    } finally {
+      hideLoading();
     }
   };
 
@@ -129,17 +158,17 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
             <h2 className="text-xl font-semibold">{conversation.name}</h2>
             {conversation.totalMembers > 1 && (
               <p className="text-sm text-gray-500">
-                {conversation.totalMembers - 1} thành viên
+                {conversation.totalMembers} thành viên
               </p>
             )}
           </div>
         </div>
         {conversation.kind === 1 && (
           <button
-            // onClick={() => {
-            //   setIsAddMemberModalOpen(true);
-            //   fetchFriends();
-            // }}
+            onClick={() => {
+              setIsAddMemberModalOpen(true);
+              fetchFriends();
+            }}
             className="p-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-colors"
           >
             <UserPlus size={20} />
@@ -263,22 +292,19 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
               {friends.map((friend) => (
                 <div key={friend._id} className="flex items-center mb-2">
                   <input
-                    type="checkbox"
+                    type="radio"
                     id={friend._id}
-                    checked={selectedFriends.includes(friend._id)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedFriends([...selectedFriends, friend._id]);
-                      } else {
-                        setSelectedFriends(
-                          selectedFriends.filter((id) => id !== friend._id)
-                        );
-                      }
-                    }}
+                    name="selectedFriend"
+                    checked={
+                      selectedFriends
+                        ? selectedFriends.includes(friend.friend._id)
+                        : false
+                    }
+                    onChange={() => setSelectedFriends(friend.friend._id)}
                     className="mr-2"
                   />
                   <label htmlFor={friend._id}>
-                    {friend.reciever.displayName}
+                    {friend.friend.displayName}
                   </label>
                 </div>
               ))}
@@ -300,6 +326,24 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
           </div>
         </div>
       )}
+      <LoadingDialog isVisible={isLoading} />
+      <AlertDialog
+        isVisible={isAlertDialogOpen}
+        title="Thành công"
+        message="Bạn đã thêm thành viên thành công!"
+        onAccept={() => {
+          setIsAlertDialogOpen(false);
+        }}
+      />
+
+      <AlertErrorDialog
+        isVisible={isAlertErrorDialogOpen}
+        title="Thất bại"
+        message={errorMessage}
+        onAccept={() => {
+          setIsAlertErrorDialogOpen(false);
+        }}
+      />
     </div>
   );
 };

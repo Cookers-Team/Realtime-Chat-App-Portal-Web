@@ -28,8 +28,15 @@ const Home = () => {
     setIsLoading(true);
     try {
       const response = await get("/v1/conversation/list");
-      console.log(response.data.content);
-      setConversations(response.data.content);
+      const conversations = response.data.content;
+      console.log("Conversations:", conversations);
+      const filteredConversations = conversations.filter(
+        (conversation: Conversation) =>
+          conversation.lastMessage || conversation.kind === 1
+      );
+      setConversations(filteredConversations);
+
+      console.log("Filtered conversations:", filteredConversations);
     } catch (error) {
       console.error("Error fetching conversations:", error);
     }
@@ -40,7 +47,7 @@ const Home = () => {
     <div className="flex h-screen">
       <NavBar setSelectedSection={setSelectedSection} />
 
-      <div className="w-1/4 bg-gray-200 p-4">
+      <div className="w-1/4 bg-gray-200">
         {selectedSection === "messages" && (
           <ChatList
             conversations={conversations}
@@ -48,7 +55,7 @@ const Home = () => {
           />
         )}
       </div>
-      <div className="w-3/4 bg-white p-4">
+      <div className="w-3/4 bg-white">
         {selectedSection === "messages" && selectedConversation && (
           <ChatWindow conversation={selectedConversation} />
         )}
