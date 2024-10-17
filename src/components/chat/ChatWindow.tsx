@@ -96,8 +96,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
 
   const fetchFriends = async () => {
     try {
-      const response = await get("/v1/user/friends");
-      setFriends(response.data);
+      const response = await get("/v1/friendship/list", {
+        getListKind: 0,
+      });
+      console.log("List ban be:", response.data.content);
+      setFriends(response.data.content);
     } catch (error) {
       console.error("Error fetching friends:", error);
     }
@@ -136,10 +139,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
         </div>
         {conversation.kind === 1 && (
           <button
-            // onClick={() => {
-            //   setIsAddMemberModalOpen(true);
-            //   fetchFriends();
-            // }}
+            onClick={() => {
+              setIsAddMemberModalOpen(true);
+              fetchFriends();
+            }}
             className="p-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-colors"
           >
             <UserPlus size={20} />

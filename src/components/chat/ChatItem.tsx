@@ -7,9 +7,10 @@ interface ChatItemProps {
 }
 
 const ChatItem: React.FC<ChatItemProps> = ({ conversation, onClick }) => {
+  console.log("Conversation:", conversation);
   return (
     <div
-      className="flex items-center p-3 border-b cursor-pointer hover:bg-gray-100"
+      className="flex items-center p-3 w-full border-b cursor-pointer hover:bg-gray-100"
       onClick={onClick}
     >
       <img
@@ -21,19 +22,28 @@ const ChatItem: React.FC<ChatItemProps> = ({ conversation, onClick }) => {
         <h3 className="font-semibold flex justify-between">
           {conversation.name}
           <span className="text-xs text-gray-500 ml-auto mt-1">
-            {conversation.lastMessage.createdAt}
+            {conversation.lastMessage
+              ? conversation.lastMessage.createdAt
+              : " "}
           </span>
         </h3>
         <p className="text-sm text-gray-600 truncate mt-1">
-          <span>
-            {conversation.lastMessage.user.displayName.length > 15
-              ? conversation.lastMessage.user.displayName.slice(0, 15) + "..."
-              : conversation.lastMessage.user.displayName}
-            :{" "}
-          </span>
-          {conversation.lastMessage.content.length > 20
-            ? conversation.lastMessage.content.slice(0, 20) + "..."
-            : conversation.lastMessage.content}
+          {conversation.lastMessage ? (
+            <>
+              <span>
+                {conversation.lastMessage.user.displayName.length > 15
+                  ? conversation.lastMessage.user.displayName.slice(0, 15) +
+                    "..."
+                  : conversation.lastMessage.user.displayName}
+                :{" "}
+              </span>
+              {conversation.lastMessage.content.length > 20
+                ? conversation.lastMessage.content.slice(0, 20) + "..."
+                : conversation.lastMessage.content}
+            </>
+          ) : (
+            " "
+          )}
         </p>
       </div>
     </div>
