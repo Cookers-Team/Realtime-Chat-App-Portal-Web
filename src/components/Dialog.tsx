@@ -77,6 +77,33 @@ const AlertDialog = ({
   );
 };
 
+const AlertErrorDialog = ({
+  isVisible,
+  title = "Thông báo",
+  message,
+  color = "red",
+  onAccept,
+}: any) => {
+  return (
+    <ModalForm
+      isVisible={isVisible}
+      title={title}
+      message={message}
+      color={color}
+    >
+      <div className="flex">
+        <button
+          onClick={onAccept}
+          className="p-3 rounded-md flex-1 text-white text-center text-lg font-semibold"
+          style={{ backgroundColor: color }}
+        >
+          Xác nhận
+        </button>
+      </div>
+    </ModalForm>
+  );
+};
+
 const LoadingDialog = ({
   isVisible,
   title = "Đang xử lý",
@@ -97,4 +124,4 @@ const LoadingDialog = ({
   );
 };
 
-export { ConfimationDialog, AlertDialog, LoadingDialog };
+export { ConfimationDialog, AlertDialog, LoadingDialog, AlertErrorDialog };
