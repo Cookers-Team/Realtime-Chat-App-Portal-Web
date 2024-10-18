@@ -24,6 +24,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
   const [isAlertDialogOpen, setIsAlertDialogOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isAlertErrorDialogOpen, setIsAlertErrorDialogOpen] = useState(false);
+  const [conversationMembers, setConversationMembers] = useState<string[]>([]);
 
   useEffect(() => {
     fetchMessages();
@@ -109,6 +110,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
       });
       console.log("List ban be:", response.data.content);
       setFriends(response.data.content);
+
+      const membersResponse = await get(`/v1/conversation-member/list`, {
+        conversation: conversation._id,
+      });
+      const memberIds = membersResponse.data.content.map(
+        (member: any) => member.user._id
+      );
+      setConversationMembers(memberIds);
     } catch (error) {
       console.error("Error fetching friends:", error);
     }
@@ -289,25 +298,45 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
           <div className="bg-white rounded-lg p-6 w-96">
             <h3 className="text-xl font-semibold mb-4">Thêm thành viên</h3>
             <div className="max-h-60 overflow-y-auto">
-              {friends.map((friend) => (
-                <div key={friend._id} className="flex items-center mb-2">
-                  <input
-                    type="radio"
-                    id={friend._id}
-                    name="selectedFriend"
-                    checked={
-                      selectedFriends
-                        ? selectedFriends.includes(friend.friend._id)
-                        : false
-                    }
-                    onChange={() => setSelectedFriends(friend.friend._id)}
-                    className="mr-2"
-                  />
-                  <label htmlFor={friend._id}>
-                    {friend.friend.displayName}
-                  </label>
-                </div>
-              ))}
+              {friends.map((friend) => {
+                const isAlreadyInConversation = conversationMembers.includes(
+                  friend.friend._id
+                );
+
+                return (
+                  <div
+                    key={friend._id}
+                    className="flex items-center justify-between mb-2"
+                  >
+                    <div className="flex items-center">
+                      <input
+                        type="radio"
+                        id={friend._id}
+                        name="selectedFriend"
+                        checked={isAlreadyInConversation}
+                        onChange={() =>
+                          !isAlreadyInConversation &&
+                          setSelectedFriends(friend.friend._id)
+                        }
+                        className="mr-2"
+                        disabled={isAlreadyInConversation}
+                      />
+                      <label
+                        htmlFor={friend._id}
+                        className={
+                          isAlreadyInConversation ? "text-gray-500" : ""
+                        }
+                      >
+                        {friend.friend.displayName}
+                      </label>
+                    </div>
+
+                    {isAlreadyInConversation && (
+                      <p className="text-gray-500 ml-auto">Đã tham gia</p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
             <div className="mt-4 flex justify-end space-x-2">
               <button
@@ -326,6 +355,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
           </div>
         </div>
       )}
+
       <LoadingDialog isVisible={isLoading} />
       <AlertDialog
         isVisible={isAlertDialogOpen}
