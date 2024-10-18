@@ -1,12 +1,15 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import useFetch from "../../hooks/useFetch";
-import { Message, Friends } from "../../types/chat";
-import { ChatWindowProps } from "../../types/chat";
+import {
+  Message,
+  Friends,
+  ChatWindowProps,
+  ConversationMembers,
+} from "../../types/chat";
 import { MoreVertical, Edit, Trash, X, Check, UserPlus } from "lucide-react";
 import { useLoading } from "../../hooks/useLoading";
 import { toast } from "react-toastify";
 import { AlertDialog, AlertErrorDialog, LoadingDialog } from "../Dialog";
-import { set } from "react-datepicker/dist/date_utils";
 
 const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -21,41 +24,71 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
   const [userIdCurrent, setUserIdCurrent] = useState("");
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
   const { isLoading, showLoading, hideLoading } = useLoading();
+  const [userIdLoading, setUserIdLoading] = useState(true);
   const [isAlertDialogOpen, setIsAlertDialogOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isAlertErrorDialogOpen, setIsAlertErrorDialogOpen] = useState(false);
-  const [conversationMembers, setConversationMembers] = useState<string[]>([]);
-
-  useEffect(() => {
-    fetchMessages();
-    fetchUserId();
-  }, [conversation._id]);
+  const [conversationMembersIdList, setConversationMembersIdList] = useState<
+    string[]
+  >([]);
+  const [isConversationMembers, setIsConversationMembers] = useState<
+    ConversationMembers[]
+  >([]);
+  const [isMemberConversation, setIsMemberConversation] =
+    useState<ConversationMembers>();
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  const currentUserId = userIdCurrent;
-
-  const fetchUserId = async () => {
+  const fetchUserId = useCallback(async () => {
     try {
       const response = await get("/v1/user/profile");
       setUserIdCurrent(response.data._id);
     } catch (error) {
       console.error("Error getting user id:", error);
+    } finally {
+      setUserIdLoading(false);
     }
-  };
+  }, [get]);
 
-  const fetchMessages = async () => {
+  const fetchMessages = useCallback(async () => {
+    if (!conversation._id || userIdLoading) return;
     try {
       const response = await get("/v1/message/list", {
         conversation: conversation._id,
       });
       setMessages(response.data.content);
+
+      const membersResponse = await get(`/v1/conversation-member/list`, {
+        conversation: conversation._id,
+      });
+
+      setIsConversationMembers(membersResponse.data.content);
+
+      const memberIds = membersResponse.data.content.map(
+        (member: any) => member.user._id
+      );
+      setConversationMembersIdList(memberIds);
+
+      const member = membersResponse.data.content.find(
+        (member: any) => member.user._id === userIdCurrent
+      );
+      setIsMemberConversation(member);
     } catch (error) {
       console.error("Error fetching messages:", error);
     }
-  };
+  }, [conversation._id, get, userIdCurrent, userIdLoading]);
+
+  useEffect(() => {
+    fetchUserId();
+  }, [fetchUserId]);
+
+  useEffect(() => {
+    if (!userIdLoading) {
+      fetchMessages();
+    }
+  }, [fetchMessages, userIdLoading]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,14 +143,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
       });
       console.log("List ban be:", response.data.content);
       setFriends(response.data.content);
-
-      const membersResponse = await get(`/v1/conversation-member/list`, {
-        conversation: conversation._id,
-      });
-      const memberIds = membersResponse.data.content.map(
-        (member: any) => member.user._id
-      );
-      setConversationMembers(memberIds);
     } catch (error) {
       console.error("Error fetching friends:", error);
     }
@@ -175,10 +200,22 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
         {conversation.kind === 1 && (
           <button
             onClick={() => {
-              setIsAddMemberModalOpen(true);
-              fetchFriends();
+              if (isMemberConversation?.canAddMember === 0) {
+                toast.error(
+                  "Bạn không có quyền thêm thành viên vào cuộc trò chuyện này!"
+                );
+                return;
+              } else {
+                setIsAddMemberModalOpen(true);
+                fetchFriends();
+              }
             }}
-            className="p-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+            className={`p-2 rounded-full text-white transition-colors ${
+              isMemberConversation?.canAddMember === 1
+                ? "bg-blue-500 hover:bg-blue-600"
+                : "bg-gray-400 cursor-not-allowed"
+            }`}
+            disabled={isMemberConversation?.canAddMember === 0}
           >
             <UserPlus size={20} />
           </button>
@@ -192,7 +229,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
             <div
               key={message._id}
               className={`mb-4 flex ${
-                message.user._id === currentUserId
+                message.user._id === userIdCurrent
                   ? "justify-end"
                   : "justify-start"
               }`}
@@ -200,12 +237,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
               <div className="relative">
                 <div
                   className={`p-3 rounded-lg max-w-xs ${
-                    message.user._id === currentUserId
+                    message.user._id === userIdCurrent
                       ? "bg-blue-500 text-white"
                       : "bg-white text-black shadow"
                   }`}
                 >
-                  {message.user._id !== currentUserId && (
+                  {message.user._id !== userIdCurrent && (
                     <p className="font-semibold text-sm">
                       {message.user.displayName}
                     </p>
@@ -237,7 +274,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
                   )}
                   <p className="text-xs mt-1 opacity-70">{message.createdAt}</p>
                 </div>
-                {message.user._id === currentUserId && (
+                {message.user._id === userIdCurrent && (
                   <div className="absolute top-0 right-0 -mt-1 -mr-1">
                     <button
                       onClick={() => toggleDropdown(message._id)}
@@ -299,9 +336,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
             <h3 className="text-xl font-semibold mb-4">Thêm thành viên</h3>
             <div className="max-h-60 overflow-y-auto">
               {friends.map((friend) => {
-                const isAlreadyInConversation = conversationMembers.includes(
-                  friend.friend._id
-                );
+                const isAlreadyInConversation =
+                  conversationMembersIdList.includes(friend.friend._id);
 
                 return (
                   <div
