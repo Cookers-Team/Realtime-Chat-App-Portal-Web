@@ -34,6 +34,19 @@ interface ChatWindowProps {
   };
 }
 
+interface ConversationMembers {
+  _id: string;
+  user: {
+    _id: string;
+    displayName: string;
+    avatarUrl: string;
+  };
+  canMessage: Number;
+  canAddMember: Number;
+  canUpdate: Number;
+  isOwner: Number;
+}
+
 interface Friends {
   _id: string;
   friend: {
@@ -47,4 +60,10 @@ interface Friends {
   };
 }
 
-export type { Conversation, Message, ChatWindowProps, Friends };
+export type {
+  Conversation,
+  Message,
+  ChatWindowProps,
+  ConversationMembers,
+  Friends,
+};
