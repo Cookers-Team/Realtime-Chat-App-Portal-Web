@@ -1,5 +1,6 @@
 import React from "react";
 import { Conversation } from "../../types/chat";
+import UserIcon from "../../assets/user_icon.png";
 
 interface ChatItemProps {
   conversation: Conversation;
@@ -14,7 +15,7 @@ const ChatItem: React.FC<ChatItemProps> = ({ conversation, onClick }) => {
       onClick={onClick}
     >
       <img
-        src={conversation.avatarUrl || "https://via.placeholder.com/112"}
+        src={conversation.avatarUrl || UserIcon}
         alt="Avatar"
         className="rounded-full w-12 h-12 object-cover border-4 border-blue-100 shadow-lg"
       />
