@@ -56,25 +56,55 @@ const useFetch = () => {
     []
   );
 
-  const createMethod =
-    (method: FetchOptions["method"]) =>
+  const get = useCallback(
     (endpoint: string, bodyOrParams?: any) => {
       let queryString = "";
-      if (method === "GET" && bodyOrParams) {
+      if (bodyOrParams) {
         queryString = `?${new URLSearchParams(bodyOrParams).toString()}`;
       }
 
       return fetchData(endpoint + queryString, {
-        method,
-        body: method !== "GET" ? bodyOrParams : undefined,
+        method: "GET",
       });
-    };
+    },
+    [fetchData]
+  );
+
+  const post = useCallback(
+    (endpoint: string, body?: any) => {
+      return fetchData(endpoint, {
+        method: "POST",
+        body,
+      });
+    },
+    [fetchData]
+  );
+
+  const put = useCallback(
+    (endpoint: string, body?: any) => {
+      return fetchData(endpoint, {
+        method: "PUT",
+        body,
+      });
+    },
+    [fetchData]
+  );
+
+  const del = useCallback(
+    (endpoint: string, body?: any) => {
+      return fetchData(endpoint, {
+        method: "DELETE",
+        body,
+      });
+    },
+    [fetchData]
+  );
 
   return {
-    get: createMethod("GET"),
-    post: createMethod("POST"),
-    put: createMethod("PUT"),
-    del: createMethod("DELETE"),
+    get,
+    post,
+    put,
+    del,
     loading,
     error,
   };

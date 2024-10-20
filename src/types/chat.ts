@@ -9,6 +9,7 @@ interface Conversation {
       displayName: string;
     };
   };
+  lastLogin: string;
   avatarUrl: string;
   totalMembers: number;
 }
@@ -31,6 +32,7 @@ interface ChatWindowProps {
     kind: Number;
     avatarUrl: string;
     totalMembers: number;
+    lastLogin: string;
   };
 }
 
