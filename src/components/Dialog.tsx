@@ -1,7 +1,7 @@
 const ModalForm = ({ children, isVisible, color, title, message }: any) => {
   if (!isVisible) return null;
   return (
-    <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50">
+    <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50">
       <div className="bg-white rounded-lg p-6">
         <h2 className="text-xl font-bold mb-2" style={{ color }}>
           {title}
@@ -10,6 +10,37 @@ const ModalForm = ({ children, isVisible, color, title, message }: any) => {
         <div className="flex-grow flex items-center justify-center w-full">
           {children}
         </div>
+      </div>
+    </div>
+  );
+};
+
+const CustomModal = ({
+  isVisible,
+  title,
+  message,
+  children,
+  color = "black",
+  onClose,
+}: any) => {
+  if (!isVisible) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <div className="bg-white rounded-md shadow-lg w-full max-w-md mx-auto p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold" style={{ color }}>
+            {title}
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            ✕
+          </button>
+        </div>
+        <p className="text-gray-600 mb-4">{message}</p>
+        <div className="w-full">{children}</div>
       </div>
     </div>
   );
@@ -25,11 +56,12 @@ const ConfimationDialog = ({
   onCancel,
 }: any) => {
   return (
-    <ModalForm
+    <CustomModal
       isVisible={isVisible}
       title={title}
       message={message}
       color={color}
+      onClose={onCancel}
     >
       <div className="flex gap-2 w-full">
         <button
@@ -46,7 +78,7 @@ const ConfimationDialog = ({
           {confirmText}
         </button>
       </div>
-    </ModalForm>
+    </CustomModal>
   );
 };
 

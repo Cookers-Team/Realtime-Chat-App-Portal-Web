@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import NavBar from "../components/NavBar";
 import { LoadingDialog } from "../components/Dialog";
 import Profile from "../components/modal/ProfileModal";
@@ -11,12 +11,27 @@ import { Conversation } from "../types/chat";
 const Home = () => {
   const [selectedSection, setSelectedSection] = useState("messages");
   const [isProfileVisible, setProfileVisible] = useState(false);
+  const [userCurrentId, setUserIdCurrent] = useState(null);
   const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] =
     useState<Conversation | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
-  const { get, post } = useFetch();
+  const { get } = useFetch();
+
+  const fetchUserId = useCallback(async () => {
+    try {
+      const response = await get("/v1/user/profile");
+      setUserIdCurrent(response.data._id);
+      console.log("User ID fetched in Home:", response.data._id);
+    } catch (error) {
+      console.error("Error getting user id:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUserId();
+  }, [fetchUserId]);
 
   useEffect(() => {
     if (selectedSection === "messages") {
@@ -57,7 +72,10 @@ const Home = () => {
       </div>
       <div className="w-3/4 bg-white">
         {selectedSection === "messages" && selectedConversation && (
-          <ChatWindow conversation={selectedConversation} />
+          <ChatWindow
+            conversation={selectedConversation}
+            userIdCurrent={userCurrentId}
+          />
         )}
         {selectedSection === "posts" && (
           <div>
