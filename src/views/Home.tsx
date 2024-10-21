@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import NavBar from "../components/NavBar";
 import { LoadingDialog } from "../components/Dialog";
 import Profile from "../components/modal/ProfileModal";
@@ -21,12 +21,29 @@ const Home = () => {
   const [isProfileVisible, setProfileVisible] = useState(false);
   const [selectedFriendSection, setSelectedFriendSection] = useState("friends");
   const [selectedPostSection, setSelectedPostSection] = useState("posts");
-  const [conversations, setConversations] = useState([]);
+  const [userCurrentId, setUserIdCurrent] = useState(null);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+
   const [selectedConversation, setSelectedConversation] =
     useState<Conversation | null>(null);
+  const [availableUsers, setAvailableUsers] = useState<Friends[]>([]);
 
   const [isLoading, setIsLoading] = useState(false);
   const { get, post } = useFetch();
+
+  const fetchUserId = useCallback(async () => {
+    try {
+      const response = await get("/v1/user/profile");
+      setUserIdCurrent(response.data._id);
+      console.log("User ID fetched in Home:", response.data._id);
+    } catch (error) {
+      console.error("Error getting user id:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUserId();
+  }, [fetchUserId]);
 
   useEffect(() => {
     if (selectedSection === "messages") {
@@ -53,6 +70,35 @@ const Home = () => {
     setIsLoading(false);
   };
 
+  const fetchAvailableUsers = async () => {
+    try {
+      const response = await get("/v1/user/list");
+      setAvailableUsers(response.data);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
+  };
+
+  const handleCreateGroup = async (
+    groupName: string,
+    avatarUrl: string,
+    members: string[]
+  ) => {
+    setIsLoading(true);
+    try {
+      const response = await post("/v1/conversation/create", {
+        name: groupName,
+        avatarUrl,
+        conversationMembers: members,
+      });
+      const newGroup = response.data;
+      setConversations((prevConversations) => [newGroup, ...prevConversations]);
+    } catch (error) {
+      console.error("Error creating group:", error);
+    }
+    setIsLoading(false);
+  };
+
   return (
     <div className="flex h-screen">
       <NavBar setSelectedSection={setSelectedSection} />
@@ -62,6 +108,8 @@ const Home = () => {
           <ChatList
             conversations={conversations}
             onSelectConversation={setSelectedConversation}
+            onCreateGroup={handleCreateGroup}
+            availableUsers={availableUsers}
           />
         ) : selectedSection === "friends" ? (
           <FriendListItem
@@ -76,6 +124,7 @@ const Home = () => {
         ) : null}
       </div>
       <div className="w-3/4 bg-white">
+
         {selectedSection === "messages" ? (
           selectedConversation ? (
             <ChatWindow conversation={selectedConversation} />
@@ -105,6 +154,7 @@ const Home = () => {
             <MyPosts />
           )
         ) : selectedSection === "settings" ? (
+
           <div>
             <h2 className="text-xl font-semibold mb-4">Cài đặt</h2>
             <p>Hiển thị các cài đặt tại đây...</p>

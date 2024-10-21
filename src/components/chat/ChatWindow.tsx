@@ -21,7 +21,10 @@ import { toast } from "react-toastify";
 import { AlertDialog, AlertErrorDialog, LoadingDialog } from "../Dialog";
 import { set } from "react-datepicker/dist/date_utils";
 
-const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
+const ChatWindow: React.FC<ChatWindowProps> = ({
+  conversation,
+  userIdCurrent,
+}) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
@@ -31,21 +34,24 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
   const [friends, setFriends] = useState<Friends[]>([]);
   const [selectedFriends, setSelectedFriends] = useState<string | null>(null);
   const { get, post, del, put } = useFetch();
-  const [userIdCurrent, setUserIdCurrent] = useState("");
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [isAlertDialogOpen, setIsAlertDialogOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isAlertErrorDialogOpen, setIsAlertErrorDialogOpen] = useState(false);
+  const [isOwner, setIsOwner] = useState(0);
+  const [isCanUpdate, setIsCanUpdate] = useState<Number>();
+  const [isCanMessage, setIsCanMessage] = useState<Number>();
+  const [isCanAddMember, setIsCanAddMember] = useState<Number>();
   const [conversationMembersIdList, setConversationMembersIdList] = useState<
     string[]
   >([]);
   const [isConversationMembers, setIsConversationMembers] = useState<
     ConversationMembers[]
   >([]);
-  const [isMemberConversation, setIsMemberConversation] =
-    useState<ConversationMembers>();
+  // const [isMemberCurrentConversation, setIsMemberCurrentConversation] =
+  //   useState<ConversationMembers>();
 
   const [isManageMembersModalOpen, setIsManageMembersModalOpen] =
     useState(false);
@@ -57,20 +63,28 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
     scrollToBottom();
   }, [messages]);
 
-  const fetchUserId = useCallback(async () => {
-    try {
-      const response = await get("/v1/user/profile");
-      setUserIdCurrent(response.data._id);
-      console.log("Test useCallback getId");
-    } catch (error) {
-      console.error("Error getting user id:", error);
+  useEffect(() => {
+    getOwner();
+  }, [conversation]);
+
+  const getOwner = () => {
+    if (conversation.isOwner === 1) {
+      if (conversation.owner._id === userIdCurrent) {
+        setIsOwner(1);
+      } else {
+        setIsOwner(0);
+      }
     }
-  }, [get]);
+  };
 
   const fetchMessages = useCallback(async () => {
     if (!conversation._id) return;
     setIsLoadingMessages(true);
     try {
+      setIsCanUpdate(conversation.canUpdate);
+      setIsCanMessage(conversation.canMessage);
+      setIsCanAddMember(conversation.canAddMember);
+
       const response = await get("/v1/message/list", {
         conversation: conversation._id,
       });
@@ -79,6 +93,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
       const membersResponse = await get(`/v1/conversation-member/list`, {
         conversation: conversation._id,
       });
+      console.log("List members:", membersResponse.data.content);
+      console.log("User current:", userIdCurrent);
+
+      // const member = membersResponse.data.content.find(
+      //   (member: any) => member.user._id === userIdCurrent
+      // );
+      // setIsMemberCurrentConversation(member);
+      // console.log("User current is member:", member);
 
       setIsConversationMembers(membersResponse.data.content);
 
@@ -87,11 +109,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
       );
       setConversationMembersIdList(memberIds);
 
-      const member = membersResponse.data.content.find(
-        (member: any) => member.user._id === userIdCurrent
-      );
-      setIsMemberConversation(member);
-      console.log("Test useCallbacl fetchMessages");
+      console.log("Test useCallback fetchMessages");
     } catch (error) {
       console.error("Error fetching messages:", error);
     } finally {
@@ -112,39 +130,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
   }, [conversation._id, get, userIdCurrent]);
 
   useEffect(() => {
-    fetchUserId();
-  }, [fetchUserId]);
-
-  useEffect(() => {
     fetchMessages();
   }, [fetchMessages]);
 
-  const handleUpdateMemberPermissions = async (
-    memberId: string,
-    permissions: {
-      canMessage: Number;
-      canUpdate: Number;
-      canAddMember: Number;
-    }
-  ) => {
-    try {
-      await put("/v1/conversation-member/update", {
-        conversationMember: memberId,
-        ...permissions,
-      });
-
-      setConversationMembers((prevMembers) =>
-        prevMembers.map((member) =>
-          member._id === memberId ? { ...member, ...permissions } : member
-        )
-      );
-
-      toast.success("Quyền thành viên đã được cập nhật");
-    } catch (error) {
-      console.error("Error updating member permissions:", error);
-      toast.error("Có lỗi xảy ra khi cập nhật quyền thành viên");
-    }
-  };
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
@@ -166,7 +154,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
   const handleDeleteMessage = async (messageId: string) => {
     try {
       await del(`/v1/message/delete/${messageId}`);
-      fetchMessages();
+      fetchMessagesAfterSend();
     } catch (error) {
       console.error("Error deleting message:", error);
     }
@@ -179,7 +167,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
         content: editedMessage,
       });
       setEditingMessageId(null);
-      fetchMessages();
+      fetchMessagesAfterSend();
     } catch (error) {
       console.error("Error updating message:", error);
     }
@@ -233,6 +221,37 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
     }
   };
 
+  const updateConversationPermission = async (
+    id: string,
+    permissions: {
+      canMessage?: Number;
+      canUpdate?: Number;
+      canAddMember?: Number;
+    }
+  ) => {
+    try {
+      const responsePermission = await put("/v1/conversation/permission", {
+        id: id,
+        ...permissions,
+      });
+      console.log("Response permission:", responsePermission);
+      if (permissions.canMessage !== undefined) {
+        setIsCanMessage(permissions.canMessage);
+      }
+      if (permissions.canUpdate !== undefined) {
+        setIsCanUpdate(permissions.canUpdate);
+      }
+      if (permissions.canAddMember !== undefined) {
+        setIsCanAddMember(permissions.canAddMember);
+      }
+    } catch (error) {
+      console.error("Error updating conversation permissions:", error);
+      toast.error("Có lỗi xảy ra khi cập nhật quyền cuộc trò chuyện");
+    }
+  };
+  console.log("Test Owner:", isOwner);
+  console.log("Test permission:", isCanUpdate, isCanMessage, isCanAddMember);
+
   return (
     <div className="flex flex-col h-full bg-gray-100">
       <div className="bg-white p-4 border-b shadow-sm flex items-center justify-between">
@@ -255,27 +274,27 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
           {conversation.kind === 1 && (
             <button
               onClick={() => {
-                if (isMemberConversation?.canAddMember === 0) {
+                if (isCanAddMember === 1 || isOwner === 1) {
+                  setIsAddMemberModalOpen(true);
+                  fetchFriends();
+                } else {
                   toast.error(
                     "Bạn không có quyền thêm thành viên vào cuộc trò chuyện này!"
                   );
                   return;
-                } else {
-                  setIsAddMemberModalOpen(true);
-                  fetchFriends();
                 }
               }}
               className={`p-2 rounded-full text-white transition-colors ${
-                isMemberConversation?.canAddMember === 1
+                isCanAddMember === 1 || isOwner === 1
                   ? "bg-blue-500 hover:bg-blue-600"
                   : "bg-gray-400 cursor-not-allowed"
               }`}
-              disabled={isMemberConversation?.canAddMember === 0}
+              disabled={isCanAddMember === 0 && isOwner === 0}
             >
               <UserPlus size={20} />
             </button>
           )}
-          {isMemberConversation?.isOwner === 1 && (
+          {isOwner === 1 && conversation.kind === 1 && (
             <button
               onClick={() => setIsManageMembersModalOpen(true)}
               className="p-2 ml-10 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-colors"
@@ -303,7 +322,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
               >
                 <div className="relative">
                   <div
-                    className={`p-3 rounded-lg max-w-xs ${
+                    className={`p-3 rounded-lg max-w-xs break-all ${
                       message.user._id === userIdCurrent
                         ? "bg-blue-500 text-white"
                         : "bg-white text-black shadow"
@@ -382,24 +401,31 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
         )}
         <div ref={messagesEndRef} />
       </div>
-      <form onSubmit={handleSendMessage} className="p-4 bg-white border-t">
-        <div className="flex items-center">
-          <input
-            type="text"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Nhập tin nhắn tại đây..."
-            className="flex-grow p-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button
-            type="submit"
-            className="px-4 py-2 bg-blue-500 text-white rounded-r-md hover:bg-blue-600 transition-colors"
-            disabled={isSendingMessage}
-          >
-            {isSendingMessage ? "Sending..." : "Gửi"}
-          </button>
+      {isCanMessage === 1 || isOwner || conversation.kind == 2 ? (
+        <form onSubmit={handleSendMessage} className="p-4 bg-white border-t">
+          <div className="flex items-center">
+            <input
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder="Nhập tin nhắn tại đây..."
+              className="flex-grow p-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-500 text-white rounded-r-md hover:bg-blue-600 transition-colors"
+              disabled={isSendingMessage}
+            >
+              {isSendingMessage ? "Sending..." : "Gửi"}
+            </button>
+          </div>
+        </form>
+      ) : (
+        <div className="p-4 bg-gray-100 border-t text-gray-600 text-center">
+          Bạn không có quyền gửi tin nhắn trong nhóm này.
         </div>
-      </form>
+      )}
+
       {/* Add Member Modal */}
       {isAddMemberModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
@@ -462,7 +488,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
           </div>
         </div>
       )}
-
       {isManageMembersModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 w-96">
@@ -473,71 +498,47 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
               <input
                 type="checkbox"
                 id="toggleUpdateAll"
+                checked={isCanUpdate === 1}
                 onChange={(e) => {
-                  const isChecked = e.target.checked;
-                  conversationMembers.forEach((member) => {
-                    if (member.isOwner !== 1) {
-                      handleUpdateMemberPermissions(member._id, {
-                        ...member,
-                        canUpdate: isChecked ? 1 : 0,
-                      });
-                    }
+                  updateConversationPermission(conversation._id, {
+                    canUpdate: e.target.checked ? 1 : 0,
                   });
                 }}
               />
-              <label htmlFor="toggleUpdateAll" className="ml-2 text-sm">
-                Thay đổi tên và ảnh đại diện nhóm
+              <label htmlFor="toggleUpdateAll" className="ml-2">
+                Có thể cập nhật tên và avatar của nhóm
               </label>
             </div>
-
             <div className="flex items-center mb-4">
               <input
                 type="checkbox"
-                id="toggleUpdateAll"
+                id="toggleMessageAll"
+                checked={isCanMessage === 1}
                 onChange={(e) => {
-                  const isChecked = e.target.checked;
-                  conversationMembers.forEach((member) => {
-                    if (member.isOwner !== 1) {
-                      handleUpdateMemberPermissions(member._id, {
-                        ...member,
-                        canMessage: isChecked ? 1 : 0,
-                      });
-                    }
+                  updateConversationPermission(conversation._id, {
+                    canMessage: e.target.checked ? 1 : 0,
                   });
                 }}
               />
-              <label htmlFor="toggleUpdateAll" className="ml-2 text-sm">
-                Nhắn tin trong nhóm
+              <label htmlFor="toggleMessageAll" className="ml-2">
+                Có thể nhắn tin trong nhóm
               </label>
             </div>
-            {/* <div className="max-h-60 overflow-y-auto">
-              {conversationMembers.map((member) => (
-                <div
-                  key={member._id}
-                  className="flex items-center justify-between mb-2"
-                >
-                  <span>{member.user.displayName}</span>
-                  {member.isOwner !== 1 && (
-                    <div className="flex space-x-2">
-                      <span
-                        className={`px-2 py-1 rounded ${
-                          member.canUpdate === 1
-                            ? "bg-green-500 text-white"
-                            : "bg-gray-300 text-gray-700"
-                        }`}
-                      >
-                        {member.canUpdate === 1
-                          ? "Có thể sửa"
-                          : "Không thể sửa"}
-                      </span>
-                    </div>
-                  )}
-                  {member.isOwner === 1 && (
-                    <span className="text-sm text-gray-500">Quản trị viên</span>
-                  )}
-                </div>
-              ))}
-            </div> */}
+            <div className="flex items-center mb-4">
+              <input
+                type="checkbox"
+                id="toggleAddMemberAll"
+                checked={isCanAddMember === 1}
+                onChange={(e) => {
+                  updateConversationPermission(conversation._id, {
+                    canAddMember: e.target.checked ? 1 : 0,
+                  });
+                }}
+              />
+              <label htmlFor="toggleAddMemberAll" className="ml-2">
+                Có thể thêm thành viên vào nhóm
+              </label>
+            </div>
             <div className="mt-4 flex justify-end">
               <button
                 onClick={() => setIsManageMembersModalOpen(false)}
@@ -550,7 +551,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
         </div>
       )}
 
-      {/* <LoadingDialog isVisible={isLoading} /> */}
       <AlertDialog
         isVisible={isAlertDialogOpen}
         title="Thành công"
