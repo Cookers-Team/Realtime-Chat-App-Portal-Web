@@ -4,8 +4,8 @@ import Register from "./views/Register";
 import ForgotPassword from "./views/ForgotPassword";
 import Home from "./views/Home";
 import Verify from "./views/Verify";
-import PostPage from "./views/PostPage";
-import Friend from "./views/Friend";
+// import PostPage from "./views/PostPage";
+// import Friend from "./views/Friend";
 import NotFound from "./views/NotFound";
 import Loading from "./views/Loading";
 import { useEffect, useState } from "react";
@@ -40,8 +40,8 @@ const App = () => {
               {isAuthenticated ? (
                 <>
                   <Route path="/" element={<Home />} />
-                  <Route path="/friends" element={<Friend />} />
-                  <Route path="/postPage" element={<PostPage />} />
+                  {/* <Route path="/friends" element={<Friend />} /> */}
+                  {/* <Route path="/postPage" element={<PostPage />} /> */}
                 </>
               ) : (
                 <>

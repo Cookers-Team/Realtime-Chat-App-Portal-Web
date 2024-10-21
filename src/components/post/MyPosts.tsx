@@ -8,11 +8,18 @@ import { Search, PlusCircle } from 'lucide-react';
 import { jwtDecode } from 'jwt-decode';
 import Button from '../Button';
 import { LoadingDialog } from '../Dialog';
+import CreatePost from './CreatePost';
+import CreateStory from './CreateStory';
+import UpdatePost from './UpdatePost'; 
 
 const MyPosts = () => {
   const [posts, setPosts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const { isLoading, showLoading, hideLoading } = useLoading();
+  const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [createStoryModalVisible, setCreateStoryModalVisible] = useState(false); // State cho Story Modal
+  const [updateModalVisible, setUpdateModalVisible] = useState(false);
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
 
   const getUserIdFromToken = () => {
     const token = localStorage.getItem('accessToken');
@@ -62,6 +69,35 @@ const MyPosts = () => {
     }
   }, [userId]);
 
+  const handleEdit = (postId: string) => {
+    setSelectedPostId(postId);
+    setUpdateModalVisible(true); 
+  };
+
+  const handleDelete = async (postId: string) => {
+    showLoading();
+    try {
+      const response = await fetch(`${remoteUrl}/v1/post/delete/${postId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+        },
+      });
+      const data = await response.json();
+      if (data.result) {
+        toast.success('Xóa bài viết thành công');
+        fetchMyPosts(); 
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error('Đã xảy ra lỗi khi xóa bài viết.');
+    } finally {
+      hideLoading();
+    }
+  };
+
   const filteredPosts = posts.filter((post: any) =>
     post.content.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -79,13 +115,20 @@ const MyPosts = () => {
               title="Tạo bài đăng"
               color="#1877F2"
               icon={PlusCircle}
-              onPress={() => {
-                console.log('Create post clicked');
-              }}
-              className="h-10 flex items-center justify-center"  
+              onPress={() => setCreateModalVisible(true)} // Hiển thị popup tạo bài đăng
+              className="h-10 flex items-center justify-center"
             />
           </div>
-          <div className="w-2/3 mt-4"> {/* Thêm mt-2 để dịch ô tìm kiếm xuống */}
+          <div className="w-1/3">
+            <Button
+              title="Tạo Story"
+              color="#FF4500"
+              icon={PlusCircle}
+              onPress={() => setCreateStoryModalVisible(true)} // Hiển thị popup tạo story
+              className="h-10 flex items-center justify-center"
+            />
+          </div>
+          <div className="w-2/3 mt-4">
             <InputField
               placeholder="Tìm kiếm"
               icon={Search}
@@ -95,8 +138,6 @@ const MyPosts = () => {
             />
           </div>
         </div>
-
-
 
         {filteredPosts.length > 0 ? (
           filteredPosts.map((post: any) => (
@@ -111,6 +152,9 @@ const MyPosts = () => {
               totalComments={post.totalComments}
               totalReactions={post.totalReactions}
               createdAt={post.createdAt}
+              status={post.status}
+              onEdit={() => handleEdit(post._id)} 
+              onDelete={() => handleDelete(post._id)} 
             />
           ))
         ) : (
@@ -118,8 +162,31 @@ const MyPosts = () => {
         )}
       </div>
       <LoadingDialog isVisible={isLoading} />
+
+      {/* Popup Tạo bài đăng */}
+      <CreatePost
+        isVisible={createModalVisible}
+        setVisible={setCreateModalVisible}
+        profile={{ displayName: "User", avatarUrl: "", role: { name: "Người dùng" } }}
+        onButtonClick={fetchMyPosts}
+      />
+
+      {/* Popup Tạo Story */}
+      <CreateStory
+        isVisible={createStoryModalVisible}
+        setVisible={setCreateStoryModalVisible}
+        profile={{ displayName: "User", avatarUrl: "", role: { name: "Người dùng" } }}
+        onButtonClick={fetchMyPosts} // Gọi lại hàm tải bài viết sau khi tạo story
+      />
+
+      {/* Popup Cập nhật bài đăng */}
+      <UpdatePost
+        isVisible={updateModalVisible}
+        setVisible={setUpdateModalVisible}
+        postId={selectedPostId}
+        onButtonClick={fetchMyPosts}
+      />
     </div>
-    
   );
 };
 
