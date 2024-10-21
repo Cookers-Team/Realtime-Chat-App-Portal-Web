@@ -26,6 +26,7 @@ import DatePickerField from "../DatePickerField";
 interface EditProfileModalProps {
   isVisible: boolean;
   onClose: () => void;
+  onOpenProfileModal: () => void;
 }
 
 interface OTPVerificationFormData {
@@ -51,6 +52,7 @@ interface VerificationFormData {
 const EditProfileModal: React.FC<EditProfileModalProps> = ({
   isVisible,
   onClose,
+  onOpenProfileModal,
 }) => {
   const [showVerificationModal, setShowVerificationModal] = useState(false);
   const [sensitiveFieldToEdit, setSensitiveFieldToEdit] = useState<
@@ -143,6 +145,11 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     }
   }, [isVisible]);
 
+  const handleCancel = () => {
+    onClose();
+    onOpenProfileModal();
+  };
+
   const fetchCurrentProfile = async () => {
     setError(null);
     try {
@@ -225,6 +232,9 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
       } else {
         setIsAlertVisible(true);
       }
+
+      onClose();
+      onOpenProfileModal();
     } catch (error: any) {
       setError(error.message);
     } finally {
@@ -346,7 +356,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="bg-white rounded-xl w-11/12 md:w-[520px] p-6 relative shadow-2xl max-h-[90vh] overflow-y-auto">
         <button
           className="absolute top-4 right-4 p-1 rounded-full hover:bg-gray-100"
@@ -544,7 +554,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
           <div className="flex justify-end space-x-3 mt-6">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleCancel}
               className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
             >
               Hủy
