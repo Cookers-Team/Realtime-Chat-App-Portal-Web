@@ -7,10 +7,20 @@ import ChatWindow from "../components/chat/ChatWindow";
 import axios from "axios";
 import useFetch from "../hooks/useFetch";
 import { Conversation } from "../types/chat";
+import FriendListItem from "../components/friend/FriendListItem";
+import FriendsList from "../components/friend/FriendsList";
+import GroupList from "../components/friend/GroupList";
+import FriendRequests from "../components/friend/FriendRequests";
+import PostListItem from "../components/post/PostListItem";
+import MyPosts from "../components/post/MyPosts";
+import FriendsPosts from "../components/post/FriendsPosts";
+import CommunityPosts from "../components/post/CommunityPosts";
 
 const Home = () => {
   const [selectedSection, setSelectedSection] = useState("messages");
   const [isProfileVisible, setProfileVisible] = useState(false);
+  const [selectedFriendSection, setSelectedFriendSection] = useState("friends");
+  const [selectedPostSection, setSelectedPostSection] = useState("posts");
   const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] =
     useState<Conversation | null>(null);
@@ -48,29 +58,58 @@ const Home = () => {
       <NavBar setSelectedSection={setSelectedSection} />
 
       <div className="w-1/4 bg-gray-200">
-        {selectedSection === "messages" && (
+        {selectedSection === "messages" ? (
           <ChatList
             conversations={conversations}
             onSelectConversation={setSelectedConversation}
           />
-        )}
+        ) : selectedSection === "friends" ? (
+          <FriendListItem
+            selectedFriendSection={selectedFriendSection}
+            setSelectedFriendSection={setSelectedFriendSection}
+          />
+        ) : selectedSection === "posts" ? (
+          <PostListItem
+            selectedPostSection={selectedPostSection}
+            setSelectedPostSection={setSelectedPostSection}
+          />
+        ) : null}
       </div>
       <div className="w-3/4 bg-white">
-        {selectedSection === "messages" && selectedConversation && (
-          <ChatWindow conversation={selectedConversation} />
-        )}
-        {selectedSection === "posts" && (
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Bài đăng</h2>
-            <p>Hiển thị nội dung bài đăng tại đây...</p>
-          </div>
-        )}
-        {selectedSection === "settings" && (
+        {selectedSection === "messages" ? (
+          selectedConversation ? (
+            <ChatWindow conversation={selectedConversation} />
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <p>Chọn một cuộc trò chuyện để bắt đầu</p>
+            </div>
+          )
+        ) : selectedSection === "friends" ? (
+          selectedFriendSection === "friends" ? (
+            <FriendsList />
+          ) : selectedFriendSection === "groups" ? (
+            <GroupList />
+          ) : selectedFriendSection === "requests" ? (
+            <FriendRequests />
+          ) : (
+            <FriendsList />
+          )
+        ) : selectedSection === "posts" ? (
+          selectedPostSection === "myPosts" ? (
+            <MyPosts />
+          ) : selectedPostSection === "friendsPosts" ? (
+            <FriendsPosts />
+          ) : selectedPostSection === "communityPosts" ? (
+            <CommunityPosts />
+          ) : (
+            <MyPosts />
+          )
+        ) : selectedSection === "settings" ? (
           <div>
             <h2 className="text-xl font-semibold mb-4">Cài đặt</h2>
             <p>Hiển thị các cài đặt tại đây...</p>
           </div>
-        )}
+        ) : null}
       </div>
       <LoadingDialog isVisible={isLoading} />
     </div>

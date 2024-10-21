@@ -74,7 +74,7 @@ const NavBar: React.FC<NavBarProps> = ({ setSelectedSection }) => {
       <button
         data-tooltip-id="tooltip-posts"
         data-tooltip-content="Bài đăng"
-        onClick={() => navigate("/postPage")}
+        onClick={() => setSelectedSection("posts")}
         className="focus:outline-none"
       >
         <FileText size={24} className="hover:scale-110 transition-transform" />
@@ -83,7 +83,7 @@ const NavBar: React.FC<NavBarProps> = ({ setSelectedSection }) => {
       <button
         data-tooltip-id="tooltip-friends"
         data-tooltip-content="Bạn bè"
-        onClick={() => navigate("/friends")}
+        onClick={() => setSelectedSection("friends")}
         className="focus:outline-none"
       >
         <Users size={24} className="hover:scale-110 transition-transform" />
