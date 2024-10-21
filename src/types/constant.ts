@@ -7,6 +7,4 @@ const PhonePattern = /^0[1235789][0-9]{8}$/;
 
 const remoteUrl = "http://localhost:7979";
 
-// const remoteUrl = "https://realtime-chat-app-api-1.onrender.com";
-
 export { EmailPattern, PhonePattern, remoteUrl };
