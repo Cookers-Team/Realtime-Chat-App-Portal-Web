@@ -294,7 +294,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               <UserPlus size={20} />
             </button>
           )}
-          {isOwner === 1 && (
+          {isOwner === 1 && conversation.kind === 1 && (
             <button
               onClick={() => setIsManageMembersModalOpen(true)}
               className="p-2 ml-10 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-colors"
@@ -322,7 +322,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               >
                 <div className="relative">
                   <div
-                    className={`p-3 rounded-lg max-w-xs ${
+                    className={`p-3 rounded-lg max-w-xs break-all ${
                       message.user._id === userIdCurrent
                         ? "bg-blue-500 text-white"
                         : "bg-white text-black shadow"
@@ -401,24 +401,31 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         )}
         <div ref={messagesEndRef} />
       </div>
-      <form onSubmit={handleSendMessage} className="p-4 bg-white border-t">
-        <div className="flex items-center">
-          <input
-            type="text"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Nhập tin nhắn tại đây..."
-            className="flex-grow p-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button
-            type="submit"
-            className="px-4 py-2 bg-blue-500 text-white rounded-r-md hover:bg-blue-600 transition-colors"
-            disabled={isSendingMessage}
-          >
-            {isSendingMessage ? "Sending..." : "Gửi"}
-          </button>
+      {isCanMessage === 1 || isOwner || conversation.kind == 2 ? (
+        <form onSubmit={handleSendMessage} className="p-4 bg-white border-t">
+          <div className="flex items-center">
+            <input
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder="Nhập tin nhắn tại đây..."
+              className="flex-grow p-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-500 text-white rounded-r-md hover:bg-blue-600 transition-colors"
+              disabled={isSendingMessage}
+            >
+              {isSendingMessage ? "Sending..." : "Gửi"}
+            </button>
+          </div>
+        </form>
+      ) : (
+        <div className="p-4 bg-gray-100 border-t text-gray-600 text-center">
+          Bạn không có quyền gửi tin nhắn trong nhóm này.
         </div>
-      </form>
+      )}
+
       {/* Add Member Modal */}
       {isAddMemberModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">

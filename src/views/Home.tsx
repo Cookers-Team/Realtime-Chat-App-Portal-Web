@@ -6,18 +6,18 @@ import ChatList from "../components/chat/ChatList";
 import ChatWindow from "../components/chat/ChatWindow";
 import axios from "axios";
 import useFetch from "../hooks/useFetch";
-import { Conversation } from "../types/chat";
+import { Conversation, Friends } from "../types/chat";
 
 const Home = () => {
   const [selectedSection, setSelectedSection] = useState("messages");
-  const [isProfileVisible, setProfileVisible] = useState(false);
   const [userCurrentId, setUserIdCurrent] = useState(null);
-  const [conversations, setConversations] = useState([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] =
     useState<Conversation | null>(null);
+  const [availableUsers, setAvailableUsers] = useState<Friends[]>([]);
 
   const [isLoading, setIsLoading] = useState(false);
-  const { get } = useFetch();
+  const { get, post } = useFetch();
 
   const fetchUserId = useCallback(async () => {
     try {
@@ -58,6 +58,35 @@ const Home = () => {
     setIsLoading(false);
   };
 
+  const fetchAvailableUsers = async () => {
+    try {
+      const response = await get("/v1/user/list");
+      setAvailableUsers(response.data);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
+  };
+
+  const handleCreateGroup = async (
+    groupName: string,
+    avatarUrl: string,
+    members: string[]
+  ) => {
+    setIsLoading(true);
+    try {
+      const response = await post("/v1/conversation/create", {
+        name: groupName,
+        avatarUrl,
+        conversationMembers: members,
+      });
+      const newGroup = response.data;
+      setConversations((prevConversations) => [newGroup, ...prevConversations]);
+    } catch (error) {
+      console.error("Error creating group:", error);
+    }
+    setIsLoading(false);
+  };
+
   return (
     <div className="flex h-screen">
       <NavBar setSelectedSection={setSelectedSection} />
@@ -67,6 +96,8 @@ const Home = () => {
           <ChatList
             conversations={conversations}
             onSelectConversation={setSelectedConversation}
+            onCreateGroup={handleCreateGroup}
+            availableUsers={availableUsers}
           />
         )}
       </div>
