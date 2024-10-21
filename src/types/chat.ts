@@ -9,9 +9,16 @@ interface Conversation {
       displayName: string;
     };
   };
+  isOwner: number;
+  owner: {
+    _id: string;
+  };
   lastLogin: string;
   avatarUrl: string;
   totalMembers: number;
+  canMessage: Number;
+  canAddMember: Number;
+  canUpdate: Number;
 }
 
 interface Message {
@@ -33,7 +40,15 @@ interface ChatWindowProps {
     avatarUrl: string;
     totalMembers: number;
     lastLogin: string;
+    isOwner: number;
+    owner: {
+      _id: string;
+    };
+    canMessage: Number;
+    canAddMember: Number;
+    canUpdate: Number;
   };
+  userIdCurrent: string | null;
 }
 
 interface ConversationMembers {
@@ -43,10 +58,7 @@ interface ConversationMembers {
     displayName: string;
     avatarUrl: string;
   };
-  canMessage: Number;
-  canAddMember: Number;
-  canUpdate: Number;
-  isOwner: Number;
+  isOwner: number;
 }
 
 interface Friends {
