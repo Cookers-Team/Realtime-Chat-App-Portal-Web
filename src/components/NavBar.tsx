@@ -49,6 +49,7 @@ const NavBar: React.FC<NavBarProps> = ({ setSelectedSection }) => {
   };
 
   return (
+    <>
     <div className="w-16 bg-blue-500 text-white flex flex-col items-center py-6 space-y-6">
       <button
         data-tooltip-id="tooltip-profile"
@@ -114,7 +115,19 @@ const NavBar: React.FC<NavBarProps> = ({ setSelectedSection }) => {
       <Tooltip id="tooltip-logout" style={{ zIndex: 100 }} />
     
       {/* Render các modals */}
-      {profileModalVisible && (
+      
+
+      <ConfimationDialog
+        isVisible={isDialogVisible}
+        title="Xác nhận"
+        message="Bạn có chắc chắn muốn đăng xuất?"
+        onConfirm={onConfirmLogout}
+        onCancel={onCancelLogout}
+        confirmText="Đăng xuất"
+        color="red"
+      />
+    </div>
+    {profileModalVisible && (
         <ProfileModal
           isVisible={profileModalVisible}
           onClose={() => setProfileModalVisible(false)}
@@ -129,17 +142,7 @@ const NavBar: React.FC<NavBarProps> = ({ setSelectedSection }) => {
           onOpenProfileModal={() => setProfileModalVisible(true)}
         />
       )}
-
-      <ConfimationDialog
-        isVisible={isDialogVisible}
-        title="Xác nhận"
-        message="Bạn có chắc chắn muốn đăng xuất?"
-        onConfirm={onConfirmLogout}
-        onCancel={onCancelLogout}
-        confirmText="Đăng xuất"
-        color="red"
-      />
-    </div>
+    </>
   );
 };
 
