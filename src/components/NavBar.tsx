@@ -49,6 +49,7 @@ const NavBar: React.FC<NavBarProps> = ({ setSelectedSection }) => {
   };
 
   return (
+    <>
     <div className="w-16 bg-blue-500 text-white flex flex-col items-center py-6 space-y-6">
       <button
         data-tooltip-id="tooltip-profile"
@@ -98,14 +99,7 @@ const NavBar: React.FC<NavBarProps> = ({ setSelectedSection }) => {
         <Settings size={24} className="hover:scale-110 transition-transform" />
       </button>
 
-      <button
-        data-tooltip-id="tooltip-logout"
-        data-tooltip-content="Đăng xuất"
-        className="focus:outline-none mt-auto"
-        onClick={handleLogout}
-      >
-        <LogOut size={24} className="hover:scale-110 transition-transform" />
-      </button>
+     
       <Tooltip id="tooltip-profile" style={{ zIndex: 100 }} />
       <Tooltip id="tooltip-messages" style={{ zIndex: 100 }} />
       <Tooltip id="tooltip-posts" style={{ zIndex: 100 }} />
@@ -114,7 +108,19 @@ const NavBar: React.FC<NavBarProps> = ({ setSelectedSection }) => {
       <Tooltip id="tooltip-logout" style={{ zIndex: 100 }} />
     
       {/* Render các modals */}
-      {profileModalVisible && (
+      
+
+      <ConfimationDialog
+        isVisible={isDialogVisible}
+        title="Xác nhận"
+        message="Bạn có chắc chắn muốn đăng xuất?"
+        onConfirm={onConfirmLogout}
+        onCancel={onCancelLogout}
+        confirmText="Đăng xuất"
+        color="red"
+      />
+    </div>
+    {profileModalVisible && (
         <ProfileModal
           isVisible={profileModalVisible}
           onClose={() => setProfileModalVisible(false)}
@@ -129,17 +135,7 @@ const NavBar: React.FC<NavBarProps> = ({ setSelectedSection }) => {
           onOpenProfileModal={() => setProfileModalVisible(true)}
         />
       )}
-
-      <ConfimationDialog
-        isVisible={isDialogVisible}
-        title="Xác nhận"
-        message="Bạn có chắc chắn muốn đăng xuất?"
-        onConfirm={onConfirmLogout}
-        onCancel={onCancelLogout}
-        confirmText="Đăng xuất"
-        color="red"
-      />
-    </div>
+    </>
   );
 };
 
