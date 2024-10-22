@@ -6,7 +6,7 @@ import ChatList from "../components/chat/ChatList";
 import ChatWindow from "../components/chat/ChatWindow";
 import axios from "axios";
 import useFetch from "../hooks/useFetch";
-import { Conversation , Friends} from "../types/chat";
+import { Conversation, Friends } from "../types/chat";
 import FriendListItem from "../components/friend/FriendListItem";
 import FriendsList from "../components/friend/FriendsList";
 import GroupList from "../components/friend/GroupList";
@@ -124,13 +124,12 @@ const Home = () => {
         ) : null}
       </div>
       <div className="w-3/4 bg-white">
-
         {selectedSection === "messages" ? (
           selectedConversation ? (
             <ChatWindow
-            conversation={selectedConversation}
-            userIdCurrent={userCurrentId}
-          />
+              conversation={selectedConversation}
+              userIdCurrent={userCurrentId}
+            />
           ) : (
             <div className="flex items-center justify-center h-full">
               <p>Chọn một cuộc trò chuyện để bắt đầu</p>
@@ -157,7 +156,6 @@ const Home = () => {
             <MyPosts />
           )
         ) : selectedSection === "settings" ? (
-
           <div>
             <h2 className="text-xl font-semibold mb-4">Cài đặt</h2>
             <p>Hiển thị các cài đặt tại đây...</p>
