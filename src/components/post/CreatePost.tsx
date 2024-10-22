@@ -3,14 +3,14 @@ import { ImageUpIcon } from "lucide-react";
 import { toast } from "react-toastify";
 import useForm from "../../hooks/useForm";
 import useFetch from "../../hooks/useFetch";
-import {uploadImage2} from "../../types/utils";
+import { uploadImage2 } from "../../types/utils";
 import TextareaField from "./TextareaField";
 import CustomModal from "./CustomModal";
 import UserImg from "../../assets/user_icon.png";
 
 const CreatePost = ({ isVisible, setVisible, profile, onButtonClick }: any) => {
-  const [imagePreview, setImagePreview] = useState<any>(null);
-  const [kind, setKind] = useState<number>(1); // Giá trị mặc định là "Cộng đồng"
+  const [imagePreviews, setImagePreviews] = useState<any[]>([]);
+  const [kind, setKind] = useState<number>(1); 
 
   const validate = (form: any) => {
     const errors: any = {};
@@ -19,37 +19,49 @@ const CreatePost = ({ isVisible, setVisible, profile, onButtonClick }: any) => {
   };
 
   const { form, errors, setForm, setErrors, handleChange, isValidForm } =
-    useForm({ content: "", imageUrl: null }, {}, validate);
+    useForm({ content: "", imageUrls: [] }, {}, validate);
 
   const { post, loading } = useFetch();
 
   useEffect(() => {
-    setForm({ content: "", imageUrl: null });
+    setForm({ content: "", imageUrls: [] });
     setErrors({});
-    setImagePreview(null);
+    setImagePreviews([]);
   }, [isVisible, setErrors]);
 
-  const handleImageUpload = (e: any) => {
-    const file = e.target.files[0];
-    if (file) {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const fileReaders: Promise<any>[] = [];
+  
+    files.forEach((file: File) => {
       const reader = new FileReader();
-      reader.onloadend = () => setImagePreview(reader.result as string);
-      reader.readAsDataURL(file);
-    }
+      const readerPromise = new Promise<void>((resolve) => {
+        reader.onloadend = () => {
+          setImagePreviews((prev) => [...prev, reader.result as string]);
+          resolve();
+        };
+      });
+      reader.readAsDataURL(file); 
+      fileReaders.push(readerPromise);
+    });
+  
+    Promise.all(fileReaders).catch(() => {
+      toast.error("Lỗi khi tải hình ảnh");
+    });
   };
+  
 
   const handleCreate = async () => {
     if (isValidForm()) {
-      const imageUrl = imagePreview
-        ? await uploadImage2(imagePreview, post)
-        : form.imageUrl;
-        
+      const imageUrls = await Promise.all(
+        imagePreviews.map((imagePreview) => uploadImage2(imagePreview, post))
+      );
 
-      const res = await post("/v1/post/create", { 
-        ...form, 
-        imageUrl, 
-        status: 1, 
-        kind,       
+      const res = await post("/v1/post/create", {
+        ...form,
+        imageUrls,
+        status: 1,
+        kind,
       });
 
       if (res.result) {
@@ -87,7 +99,7 @@ const CreatePost = ({ isVisible, setVisible, profile, onButtonClick }: any) => {
               }
             </div>
 
-            {/* Dropdown cho lựa chọn "kind" */}
+            {/* Dropdown for selecting "kind" */}
             <div className="relative">
               <select
                 value={kind}
@@ -117,15 +129,21 @@ const CreatePost = ({ isVisible, setVisible, profile, onButtonClick }: any) => {
             <input
               type="file"
               accept="image/*"
+              multiple
               onChange={handleImageUpload}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
             <div className="flex flex-col items-center justify-center">
-              {imagePreview ? (
-                <img
-                  src={imagePreview}
-                  className="max-w-full object-contain rounded-lg"
-                />
+              {imagePreviews.length > 0 ? (
+                <div className="grid grid-cols-2 gap-4">
+                  {imagePreviews.map((preview, index) => (
+                    <img
+                      key={index}
+                      src={preview}
+                      className="max-w-full object-contain rounded-lg"
+                    />
+                  ))}
+                </div>
               ) : (
                 <div className="flex items-center justify-center">
                   <ImageUpIcon className="text-gray-400" size={20} />
