@@ -9,9 +9,9 @@ import CustomModal from "./CustomModal";
 import UserImg from "../../assets/user_icon.png";
 
 const UpdatePost = ({ isVisible, setVisible, postId, onButtonClick }: any) => {
-  const [imagePreview, setImagePreview] = useState<any>(null);
-  const [kind, setKind] = useState<number>(1); 
-  const [imageUrls, setImageUrls] = useState<string[]>([]); // Thêm imageUrls
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]); // Previews của ảnh mới
+  const [kind, setKind] = useState<number>(1);
+  const [imageUrls, setImageUrls] = useState<string[]>([]); // URLs của ảnh cũ và mới
 
   const validate = (form: any) => {
     const errors: any = {};
@@ -28,7 +28,7 @@ const UpdatePost = ({ isVisible, setVisible, postId, onButtonClick }: any) => {
     const fetchData = async () => {
       if (postId) {
         setErrors({});
-        setImagePreview(null);
+        setImagePreviews([]);
         const res = await get(`/v1/post/get/${postId}`);
         setForm({ ...res.data });
         setKind(res.data.kind || 1);
@@ -38,33 +38,45 @@ const UpdatePost = ({ isVisible, setVisible, postId, onButtonClick }: any) => {
     fetchData();
   }, [isVisible, postId]);
 
-  const handleImageUpload = async (e: any) => {
-    const file = e.target.files[0];
-    if (file) {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []) as File[]; 
+    const fileReaders: Promise<void>[] = [];
+    
+    files.forEach((file: File) => {
       const reader = new FileReader();
-      reader.onloadend = async () => {
-        if (typeof reader.result === "string") {
-          setImagePreview(reader.result); 
-          
-          const uploadedImageUrl = await uploadImage2(file, post); 
-          setImageUrls((prevUrls) => [...prevUrls, uploadedImageUrl]); 
-        } else {
-          console.error("Lỗi: reader.result không phải là chuỗi.");
-        }
-      };
-      reader.readAsDataURL(file);
-    }
+      const readerPromise = new Promise<void>((resolve) => {
+        reader.onloadend = () => {
+          setImagePreviews((prev) => [...prev, reader.result as string]);
+          resolve();
+        };
+      });
+      reader.readAsDataURL(file); 
+      fileReaders.push(readerPromise);
+    });
+  
+    Promise.all(fileReaders).catch(() => {
+      toast.error("Lỗi khi tải hình ảnh");
+    });
   };
+  
 
   const handleUpdate = async () => {
     if (isValidForm()) {
-      const res = await put("/v1/post/update", { 
-        id: postId, 
-        content: form.content,
-        imageUrls, 
-        kind 
-      });
       
+      const newImageUrls = await Promise.all(
+        imagePreviews.map((imagePreview) => uploadImage2(imagePreview, post))
+      );
+
+    
+      const updatedImageUrls = [...imageUrls, ...newImageUrls];
+
+      const res = await put("/v1/post/update", {
+        id: postId,
+        content: form.content,
+        imageUrls: updatedImageUrls, 
+        kind,
+      });
+
       if (res.result) {
         toast.success("Cập nhật thành công");
         setVisible(false);
@@ -94,11 +106,9 @@ const UpdatePost = ({ isVisible, setVisible, postId, onButtonClick }: any) => {
               <div className="flex flex-col">
                 <div className="flex space-x-2">
                   <p className="font-semibold">{form.user?.displayName}</p>
-                  {
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                      {form.user?.role.name}
-                    </span>
-                  }
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                    {form.user?.role.name}
+                  </span>
                 </div>
                 <p className="text-gray-500 text-sm">{form.createdAt}</p>
               </div>
@@ -115,7 +125,7 @@ const UpdatePost = ({ isVisible, setVisible, postId, onButtonClick }: any) => {
               <option value={3}>Chỉ mình tôi</option>
             </select>
           </div>
-          
+
           <TextareaField
             title="Nội dung"
             isRequire
@@ -128,19 +138,27 @@ const UpdatePost = ({ isVisible, setVisible, postId, onButtonClick }: any) => {
             maxLength={1000}
             className="mb-4"
           />
+
           <div className="border border-gray-300 rounded-lg p-4 mb-4 relative hover:border-blue-500">
             <input
               type="file"
               accept="image/*"
+              multiple
               onChange={handleImageUpload}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
             <div className="flex flex-col items-center justify-center">
-              {imagePreview || imageUrls.length > 0 ? (
-                <img
-                  src={imagePreview || imageUrls[0]} // Hiển thị ảnh mới nhất
-                  className="max-w-full object-contain rounded-lg"
-                />
+              {imagePreviews.length > 0 || imageUrls.length > 0 ? (
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Hiển thị ảnh cũ */}
+                  {imageUrls.map((url, index) => (
+                    <img key={index} src={url} className="max-w-full object-contain rounded-lg" />
+                  ))}
+                  {/* Hiển thị preview ảnh mới */}
+                  {imagePreviews.map((preview, index) => (
+                    <img key={index} src={preview} className="max-w-full object-contain rounded-lg" />
+                  ))}
+                </div>
               ) : (
                 <div className="flex items-center justify-center">
                   <ImageUpIcon className="text-gray-400" size={20} />
