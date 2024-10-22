@@ -99,7 +99,14 @@ const NavBar: React.FC<NavBarProps> = ({ setSelectedSection }) => {
         <Settings size={24} className="hover:scale-110 transition-transform" />
       </button>
 
-     
+      <button
+        data-tooltip-id="tooltip-logout"
+        data-tooltip-content="Đăng xuất"
+        className="focus:outline-none mt-auto"
+        onClick={handleLogout}
+      >
+        <LogOut size={24} className="hover:scale-110 transition-transform" />
+      </button>
       <Tooltip id="tooltip-profile" style={{ zIndex: 100 }} />
       <Tooltip id="tooltip-messages" style={{ zIndex: 100 }} />
       <Tooltip id="tooltip-posts" style={{ zIndex: 100 }} />
