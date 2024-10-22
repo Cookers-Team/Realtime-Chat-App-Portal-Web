@@ -49,78 +49,71 @@ const NavBar: React.FC<NavBarProps> = ({ setSelectedSection }) => {
   };
 
   return (
-    <>
-      <div className="w-16 bg-blue-500 text-white flex flex-col items-center py-6 space-y-6">
-        <button
-          data-tooltip-id="tooltip-profile"
-          data-tooltip-content="Trang cá nhân"
-          className="focus:outline-none"
-          onClick={handleProfileClick}
-        >
-          <User size={24} className="hover:scale-110 transition-transform" />
-        </button>
+    <div className="w-16 bg-blue-500 text-white flex flex-col items-center py-6 space-y-6">
+      <button
+        data-tooltip-id="tooltip-profile"
+        data-tooltip-content="Trang cá nhân"
+        className="focus:outline-none"
+        onClick={handleProfileClick}
+      >
+        <User size={24} className="hover:scale-110 transition-transform" />
+      </button>
 
-        <button
-          data-tooltip-id="tooltip-messages"
-          data-tooltip-content="Tin nhắn"
-          onClick={() => setSelectedSection("messages")}
-          className="focus:outline-none"
-        >
-          <MessageCircle
-            size={24}
-            className="hover:scale-110 transition-transform"
-          />
-        </button>
+      <button
+        data-tooltip-id="tooltip-messages"
+        data-tooltip-content="Tin nhắn"
+        onClick={() => setSelectedSection("messages")}
+        className="focus:outline-none"
+      >
+        <MessageCircle
+          size={24}
+          className="hover:scale-110 transition-transform"
+        />
+      </button>
 
-        <button
-          data-tooltip-id="tooltip-posts"
-          data-tooltip-content="Bài đăng"
-          onClick={() => navigate("/postPage")}
-          className="focus:outline-none"
-        >
-          <FileText
-            size={24}
-            className="hover:scale-110 transition-transform"
-          />
-        </button>
+      <button
+        data-tooltip-id="tooltip-posts"
+        data-tooltip-content="Bài đăng"
+        onClick={() => setSelectedSection("posts")}
+        className="focus:outline-none"
+      >
+        <FileText size={24} className="hover:scale-110 transition-transform" />
+      </button>
 
-        <button
-          data-tooltip-id="tooltip-friends"
-          data-tooltip-content="Bạn bè"
-          onClick={() => navigate("/friends")}
-          className="focus:outline-none"
-        >
-          <Users size={24} className="hover:scale-110 transition-transform" />
-        </button>
+      <button
+        data-tooltip-id="tooltip-friends"
+        data-tooltip-content="Bạn bè"
+        onClick={() => setSelectedSection("friends")}
+        className="focus:outline-none"
+      >
+        <Users size={24} className="hover:scale-110 transition-transform" />
+      </button>
 
-        <button
-          data-tooltip-id="tooltip-settings"
-          data-tooltip-content="Cài đặt"
-          onClick={() => setSelectedSection("settings")}
-          className="focus:outline-none"
-        >
-          <Settings
-            size={24}
-            className="hover:scale-110 transition-transform"
-          />
-        </button>
+      <button
+        data-tooltip-id="tooltip-settings"
+        data-tooltip-content="Cài đặt"
+        onClick={() => setSelectedSection("settings")}
+        className="focus:outline-none"
+      >
+        <Settings size={24} className="hover:scale-110 transition-transform" />
+      </button>
 
-        <button
-          data-tooltip-id="tooltip-logout"
-          data-tooltip-content="Đăng xuất"
-          className="focus:outline-none mt-auto"
-          onClick={handleLogout}
-        >
-          <LogOut size={24} className="hover:scale-110 transition-transform" />
-        </button>
-
-        <Tooltip id="tooltip-profile" style={{ zIndex: 100 }} />
-        <Tooltip id="tooltip-messages" style={{ zIndex: 100 }} />
-        <Tooltip id="tooltip-posts" style={{ zIndex: 100 }} />
-        <Tooltip id="tooltip-friends" style={{ zIndex: 100 }} />
-        <Tooltip id="tooltip-settings" style={{ zIndex: 100 }} />
-        <Tooltip id="tooltip-logout" style={{ zIndex: 100 }} />
-      </div>
+      <button
+        data-tooltip-id="tooltip-logout"
+        data-tooltip-content="Đăng xuất"
+        className="focus:outline-none mt-auto"
+        onClick={handleLogout}
+      >
+        <LogOut size={24} className="hover:scale-110 transition-transform" />
+      </button>
+      <Tooltip id="tooltip-profile" style={{ zIndex: 100 }} />
+      <Tooltip id="tooltip-messages" style={{ zIndex: 100 }} />
+      <Tooltip id="tooltip-posts" style={{ zIndex: 100 }} />
+      <Tooltip id="tooltip-friends" style={{ zIndex: 100 }} />
+      <Tooltip id="tooltip-settings" style={{ zIndex: 100 }} />
+      <Tooltip id="tooltip-logout" style={{ zIndex: 100 }} />
+    
+      {/* Render các modals */}
       {profileModalVisible && (
         <ProfileModal
           isVisible={profileModalVisible}
@@ -136,6 +129,7 @@ const NavBar: React.FC<NavBarProps> = ({ setSelectedSection }) => {
           onOpenProfileModal={() => setProfileModalVisible(true)}
         />
       )}
+
       <ConfimationDialog
         isVisible={isDialogVisible}
         title="Xác nhận"
@@ -145,7 +139,7 @@ const NavBar: React.FC<NavBarProps> = ({ setSelectedSection }) => {
         confirmText="Đăng xuất"
         color="red"
       />
-    </>
+    </div>
   );
 };
 
