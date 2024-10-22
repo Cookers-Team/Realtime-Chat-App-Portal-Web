@@ -148,18 +148,19 @@ const MyPosts = () => {
                 avatarUrl: post.user.avatarUrl,
               }}
               content={post.content}
-              imageUrl={post.imageUrl}
+              imageUrls={post.imageUrls} // Sử dụng imageUrls ở đây
               totalComments={post.totalComments}
               totalReactions={post.totalReactions}
               createdAt={post.createdAt}
               status={post.status}
-              onEdit={() => handleEdit(post._id)} 
-              onDelete={() => handleDelete(post._id)} 
+              onEdit={() => handleEdit(post._id)}
+              onDelete={() => handleDelete(post._id)}
             />
           ))
         ) : (
           <p className="text-center">Không có bài viết nào.</p>
         )}
+
       </div>
       <LoadingDialog isVisible={isLoading} />
 

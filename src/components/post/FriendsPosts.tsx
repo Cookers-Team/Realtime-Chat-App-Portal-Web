@@ -219,7 +219,7 @@ const FriendsPosts = () => {
                 avatarUrl: post.user.avatarUrl,
               }}
               content={post.content}
-              imageUrl={post.imageUrls}
+              imageUrls={post.imageUrls}
               totalComments={post.totalComments}
               totalReactions={post.totalReactions}
               createdAt={post.createdAt}

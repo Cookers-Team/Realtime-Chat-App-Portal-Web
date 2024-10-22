@@ -8,15 +8,22 @@ interface PostUser {
 interface PostItemProps {
   user: PostUser;
   content: string;
-  imageUrl?: string | null;
+  imageUrls?: string[]; // Chuyển từ string | null thành mảng string
   totalComments: number;
   totalReactions: number;
   createdAt: string;
 }
 
-const PostItem: React.FC<PostItemProps> = ({ user, content, imageUrl, totalComments, totalReactions, createdAt }) => {
+const PostItem: React.FC<PostItemProps> = ({
+  user,
+  content,
+  imageUrls = [], 
+  totalComments,
+  totalReactions,
+  createdAt
+}) => {
   return (
-    <div className="bg-white p-4 mb-4 shadow rounded-lg max-w-2xl mx-auto border-gray-300 border"> 
+    <div className="bg-white p-4 mb-4 shadow rounded-lg max-w-2xl mx-auto border-gray-300 border">
       <div className="flex items-center mb-2">
         <img
           src={user.avatarUrl || '/default-avatar.png'}
@@ -30,13 +37,18 @@ const PostItem: React.FC<PostItemProps> = ({ user, content, imageUrl, totalComme
       </div>
       <div>
         <p className="mb-2">{content}</p>
-        {imageUrl && (
-          <img
-            src={imageUrl}
-            alt="Post"
-            className="w-full h-auto rounded-lg mb-2" 
-            style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain' }} 
-          />
+        {imageUrls.length > 0 && (
+          <div className="grid grid-cols-2 gap-2"> 
+            {imageUrls.map((url, index) => (
+              <img
+                key={index}
+                src={url}
+                alt={`Post Image ${index + 1}`}
+                className="w-full h-auto rounded-lg mb-2"
+                style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain' }}
+              />
+            ))}
+          </div>
         )}
       </div>
       <div className="flex items-center text-sm text-gray-500">

@@ -3,7 +3,7 @@ import { ImageUpIcon } from "lucide-react";
 import { toast } from "react-toastify";
 import useForm from "../../hooks/useForm";
 import useFetch from "../../hooks/useFetch";
-import { uploadImage2 } from "../../types/utils";
+import { uploadImage2 } from "../../types/utils"; // Giả sử đây là hàm upload ảnh
 import TextareaField from "./TextareaField";
 import CustomModal from "./CustomModal";
 import UserImg from "../../assets/user_icon.png";
@@ -25,7 +25,6 @@ const UpdatePost = ({ isVisible, setVisible, postId, onButtonClick }: any) => {
   const { get, put, post, loading } = useFetch();
 
   useEffect(() => {
-    console.log("postId:", postId); 
     const fetchData = async () => {
       if (postId) {
         setErrors({});
@@ -33,19 +32,22 @@ const UpdatePost = ({ isVisible, setVisible, postId, onButtonClick }: any) => {
         const res = await get(`/v1/post/get/${postId}`);
         setForm({ ...res.data });
         setKind(res.data.kind || 1);
-        setImageUrls(res.data.imageUrls || []); // Cập nhật imageUrls nếu có
+        setImageUrls(res.data.imageUrls || []); 
       }
     };
     fetchData();
   }, [isVisible, postId]);
 
-  const handleImageUpload = (e: any) => {
+  const handleImageUpload = async (e: any) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
+      reader.onloadend = async () => {
         if (typeof reader.result === "string") {
           setImagePreview(reader.result); 
+          
+          const uploadedImageUrl = await uploadImage2(file, post); 
+          setImageUrls((prevUrls) => [...prevUrls, uploadedImageUrl]); 
         } else {
           console.error("Lỗi: reader.result không phải là chuỗi.");
         }
@@ -53,16 +55,13 @@ const UpdatePost = ({ isVisible, setVisible, postId, onButtonClick }: any) => {
       reader.readAsDataURL(file);
     }
   };
-  
 
   const handleUpdate = async () => {
     if (isValidForm()) {
-      console.log("Data being sent:", { ...form, imageUrls, kind });
-      
       const res = await put("/v1/post/update", { 
-        id: postId, // Gửi id của bài viết
+        id: postId, 
         content: form.content,
-        imageUrls, // Gửi mảng imageUrls
+        imageUrls, 
         kind 
       });
       
@@ -72,7 +71,6 @@ const UpdatePost = ({ isVisible, setVisible, postId, onButtonClick }: any) => {
         onButtonClick();
       } else {
         toast.error(res.message);
-        console.log("Lỗi:", res); 
       }
     } else {
       toast.error("Vui lòng kiểm tra lại thông tin");
@@ -138,9 +136,9 @@ const UpdatePost = ({ isVisible, setVisible, postId, onButtonClick }: any) => {
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
             <div className="flex flex-col items-center justify-center">
-              {imagePreview || form.imageUrls?.length > 0 ? (
+              {imagePreview || imageUrls.length > 0 ? (
                 <img
-                  src={imagePreview || form.imageUrls[0]}
+                  src={imagePreview || imageUrls[0]} // Hiển thị ảnh mới nhất
                   className="max-w-full object-contain rounded-lg"
                 />
               ) : (
