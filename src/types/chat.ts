@@ -1,3 +1,9 @@
+interface UserProfile {
+  _id: string;
+  displayName: string;
+  avatarUrl: string;
+  secretKey: string;
+}
 interface Conversation {
   _id: string;
   name: string;
@@ -48,7 +54,7 @@ interface ChatWindowProps {
     canAddMember: Number;
     canUpdate: Number;
   };
-  userIdCurrent: string | null;
+  userCurrent: UserProfile | null;
 }
 
 interface ConversationMembers {
@@ -80,4 +86,5 @@ export type {
   ChatWindowProps,
   ConversationMembers,
   Friends,
+  UserProfile,
 };
