@@ -16,6 +16,7 @@
     "autoprefixer": "^10.4.20",
     "axios": "^1.7.7",
     "build": "^0.1.4",
+    "crypto-js": "^4.2.0",
     "dayjs": "^1.11.13",
     "dotenv": "^16.4.5",
     "expo-linear-gradient": "^13.0.2",
@@ -32,10 +33,12 @@
     "react-toastify": "^10.0.5",
     "react-tooltip": "^5.28.0",
     "run": "^1.5.0",
+    "socket.io-client": "^4.8.1",
     "zalo-ute": "file:"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",
+    "@types/crypto-js": "^4.2.2",
     "@types/node": "^22.5.5",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",

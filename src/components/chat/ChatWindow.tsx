@@ -16,14 +16,15 @@ import {
   UserPlus,
   Settings,
 } from "lucide-react";
-import { useLoading } from "../../hooks/useLoading";
 import { toast } from "react-toastify";
 import { AlertDialog, AlertErrorDialog, LoadingDialog } from "../Dialog";
-import { set } from "react-datepicker/dist/date_utils";
+import { encrypt, decrypt } from "../../types/utils";
+import { Socket, io } from "socket.io-client";
+import { remoteUrl } from "../../types/constant";
 
 const ChatWindow: React.FC<ChatWindowProps> = ({
   conversation,
-  userIdCurrent,
+  userCurrent,
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -50,14 +51,18 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const [isConversationMembers, setIsConversationMembers] = useState<
     ConversationMembers[]
   >([]);
-  // const [isMemberCurrentConversation, setIsMemberCurrentConversation] =
-  //   useState<ConversationMembers>();
 
   const [isManageMembersModalOpen, setIsManageMembersModalOpen] =
     useState(false);
   const [conversationMembers, setConversationMembers] = useState<
     ConversationMembers[]
   >([]);
+
+  const socketRef = useRef<Socket | null>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   useEffect(() => {
     scrollToBottom();
@@ -67,13 +72,79 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     getOwner();
   }, [conversation]);
 
+  const initializeSocket = useCallback(() => {
+    const socket = io(remoteUrl, {
+      transports: ["websocket"],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 3000,
+    });
+
+    socket.on("connect", () => {
+      console.log("Socket.IO Connected");
+      socket.emit("JOIN_CONVERSATION", conversation._id);
+    });
+
+    socket.on("disconnect", (reason: any) => {
+      console.log("Socket.IO Disconnected:", reason);
+    });
+
+    socket.on("CREATE_MESSAGE", async (messageId: any) => {
+      await fetchNewMessage(messageId);
+    });
+
+    socket.on("UPDATE_MESSAGE", async (messageId: string) => {
+      await fetchUpdatedMessage(messageId);
+    });
+
+    socket.on("DELETE_MESSAGE", (messageId: string) => {
+      setMessages((prevMessages) =>
+        prevMessages.filter((msg) => msg._id !== messageId)
+      );
+    });
+
+    socketRef.current = socket;
+
+    return () => {
+      if (socketRef.current) {
+        socket.emit("LEAVE_CONVERSATION", conversation._id);
+        socket.disconnect();
+      }
+    };
+  }, [conversation._id, remoteUrl]);
+
+  useEffect(() => {
+    const cleanup = initializeSocket();
+    return cleanup;
+  }, [initializeSocket]);
+
+  const fetchNewMessage = async (messageId: string) => {
+    try {
+      const res = await get(`/v1/message/get/${messageId}`);
+      const newMessage = res.data;
+      setMessages((prevMessages) => [newMessage, ...prevMessages]);
+    } catch (error) {
+      console.error("Error fetching new message:", error);
+    }
+  };
+
+  const fetchUpdatedMessage = async (messageId: string) => {
+    try {
+      const res = await get(`/v1/message/get/${messageId}`);
+      const updatedMessage = res.data;
+      setMessages((prevMessages) =>
+        prevMessages.map((msg) =>
+          msg._id === updatedMessage._id ? updatedMessage : msg
+        )
+      );
+    } catch (error) {
+      console.error("Error fetching updated message:", error);
+    }
+  };
+
   const getOwner = () => {
     if (conversation.isOwner === 1) {
-      if (conversation.owner._id === userIdCurrent) {
-        setIsOwner(1);
-      } else {
-        setIsOwner(0);
-      }
+      setIsOwner(conversation.owner._id === userCurrent?._id ? 1 : 0);
     }
   };
 
@@ -88,62 +159,47 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       const response = await get("/v1/message/list", {
         conversation: conversation._id,
       });
-      setMessages(response.data.content);
+
+      console.log("Response messages:", response.data.content);
+
+      const message = response.data.content.map((msg: any) => ({
+        ...msg,
+      }));
+      setMessages(message);
 
       const membersResponse = await get(`/v1/conversation-member/list`, {
         conversation: conversation._id,
       });
-      console.log("List members:", membersResponse.data.content);
-      console.log("User current:", userIdCurrent);
-
-      // const member = membersResponse.data.content.find(
-      //   (member: any) => member.user._id === userIdCurrent
-      // );
-      // setIsMemberCurrentConversation(member);
-      // console.log("User current is member:", member);
 
       setIsConversationMembers(membersResponse.data.content);
-
-      const memberIds = membersResponse.data.content.map(
-        (member: any) => member.user._id
+      setConversationMembersIdList(
+        membersResponse.data.content.map((member: any) => member.user._id)
       );
-      setConversationMembersIdList(memberIds);
-
-      console.log("Test useCallback fetchMessages");
     } catch (error) {
       console.error("Error fetching messages:", error);
     } finally {
       setIsLoadingMessages(false);
     }
-  }, [conversation._id, get, userIdCurrent]);
-
-  const fetchMessagesAfterSend = useCallback(async () => {
-    if (!conversation._id) return;
-    try {
-      const response = await get("/v1/message/list", {
-        conversation: conversation._id,
-      });
-      setMessages(response.data.content);
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-    }
-  }, [conversation._id, get, userIdCurrent]);
+  }, [conversation._id, get, userCurrent?._id]);
 
   useEffect(() => {
     fetchMessages();
   }, [fetchMessages]);
 
-  const handleSendMessage = async (e: React.FormEvent) => {
+  const handleSendMessage = async (e: any) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
     setIsSendingMessage(true);
     try {
+      const encryptedMessage = encrypt(
+        newMessage.trim(),
+        userCurrent?.secretKey
+      );
       await post("/v1/message/create", {
         conversation: conversation._id,
-        content: newMessage,
+        content: encryptedMessage,
       });
       setNewMessage("");
-      fetchMessagesAfterSend();
     } catch (error) {
       console.error("Error creating message:", error);
     } finally {
@@ -151,34 +207,35 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   };
 
-  const handleDeleteMessage = async (messageId: string) => {
+  const handleDeleteMessage = async (messageId: any) => {
     try {
       await del(`/v1/message/delete/${messageId}`);
-      fetchMessagesAfterSend();
     } catch (error) {
       console.error("Error deleting message:", error);
     }
   };
 
-  const handleUpdateMessage = async (messageId: string) => {
+  const handleUpdateMessage = async (messageId: any) => {
     try {
+      const encryptedMessage = encrypt(
+        editedMessage.trim(),
+        userCurrent?.secretKey
+      );
+
       await put("/v1/message/update", {
         id: messageId,
-        content: editedMessage,
+        content: encryptedMessage,
       });
       setEditingMessageId(null);
-      fetchMessagesAfterSend();
+      setEditedMessage("");
     } catch (error) {
       console.error("Error updating message:", error);
+      toast.error("Có lỗi xảy ra khi cập nhật tin nhắn");
     }
   };
 
   const toggleDropdown = (messageId: string) => {
     setActiveDropdown(activeDropdown === messageId ? null : messageId);
-  };
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   const fetchFriends = async () => {
@@ -315,7 +372,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               <div
                 key={message._id}
                 className={`mb-4 flex ${
-                  message.user._id === userIdCurrent
+                  message.user._id === userCurrent?._id
                     ? "justify-end"
                     : "justify-start"
                 }`}
@@ -323,12 +380,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                 <div className="relative">
                   <div
                     className={`p-3 rounded-lg max-w-xs break-all ${
-                      message.user._id === userIdCurrent
+                      message.user._id === userCurrent?._id
                         ? "bg-blue-500 text-white"
                         : "bg-white text-black shadow"
                     }`}
                   >
-                    {message.user._id !== userIdCurrent && (
+                    {message.user._id !== userCurrent?._id && (
                       <p className="font-semibold text-sm">
                         {message.user.displayName}
                       </p>
@@ -347,7 +404,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                         >
                           <X size={16} />
                         </button>
-
                         <button
                           onClick={() => handleUpdateMessage(message._id)}
                           className="px-2 py-1 bg-green-500 text-white rounded-md"
@@ -356,13 +412,17 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                         </button>
                       </div>
                     ) : (
-                      <p className="mt-1">{message.content}</p>
+                      <p className="mt-1">
+                        {message.content
+                          ? decrypt(message.content, userCurrent?.secretKey)
+                          : "Không thể hiển thị tin nhắn"}
+                      </p>
                     )}
                     <p className="text-xs mt-1 opacity-70">
                       {message.createdAt}
                     </p>
                   </div>
-                  {message.user._id === userIdCurrent && (
+                  {message.user._id === userCurrent?._id && (
                     <div className="absolute top-0 right-0 -mt-1 -mr-1">
                       <button
                         onClick={() => toggleDropdown(message._id)}
@@ -375,7 +435,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                           <button
                             onClick={() => {
                               setEditingMessageId(message._id);
-                              setEditedMessage(message.content);
+                              setEditedMessage(
+                                decrypt(message.content, userCurrent.secretKey)
+                              );
                               setActiveDropdown(null);
                             }}
                             className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -571,4 +633,5 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     </div>
   );
 };
+
 export default ChatWindow;

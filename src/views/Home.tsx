@@ -6,7 +6,7 @@ import ChatList from "../components/chat/ChatList";
 import ChatWindow from "../components/chat/ChatWindow";
 import axios from "axios";
 import useFetch from "../hooks/useFetch";
-import { Conversation, Friends } from "../types/chat";
+import { Conversation, Friends, UserProfile } from "../types/chat";
 import FriendListItem from "../components/friend/FriendListItem";
 import FriendsList from "../components/friend/FriendsList";
 import GroupList from "../components/friend/GroupList";
@@ -21,7 +21,7 @@ const Home = () => {
   const [isProfileVisible, setProfileVisible] = useState(false);
   const [selectedFriendSection, setSelectedFriendSection] = useState("friends");
   const [selectedPostSection, setSelectedPostSection] = useState("posts");
-  const [userCurrentId, setUserIdCurrent] = useState(null);
+  const [userCurrent, setUserCurrent] = useState<UserProfile | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
 
   const [selectedConversation, setSelectedConversation] =
@@ -31,10 +31,10 @@ const Home = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { get, post } = useFetch();
 
-  const fetchUserId = useCallback(async () => {
+  const fetchUserCurrent = useCallback(async () => {
     try {
       const response = await get("/v1/user/profile");
-      setUserIdCurrent(response.data._id);
+      setUserCurrent(response.data);
       console.log("User ID fetched in Home:", response.data._id);
     } catch (error) {
       console.error("Error getting user id:", error);
@@ -42,8 +42,8 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
-    fetchUserId();
-  }, [fetchUserId]);
+    fetchUserCurrent();
+  }, [fetchUserCurrent]);
 
   useEffect(() => {
     if (selectedSection === "messages") {
@@ -128,7 +128,7 @@ const Home = () => {
           selectedConversation ? (
             <ChatWindow
               conversation={selectedConversation}
-              userIdCurrent={userCurrentId}
+              userCurrent={userCurrent}
             />
           ) : (
             <div className="flex items-center justify-center h-full">
