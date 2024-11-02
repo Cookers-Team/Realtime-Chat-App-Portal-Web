@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import useFetch from "../../hooks/useFetch";
+import useSocketChat from "../../hooks/useSocketChat";
 import {
   Message,
   Friends,
@@ -19,12 +20,12 @@ import {
 import { toast } from "react-toastify";
 import { AlertDialog, AlertErrorDialog, LoadingDialog } from "../Dialog";
 import { encrypt, decrypt } from "../../types/utils";
-import { Socket, io } from "socket.io-client";
 import { remoteUrl } from "../../types/constant";
 
 const ChatWindow: React.FC<ChatWindowProps> = ({
   conversation,
   userCurrent,
+  onMessageChange,
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -54,11 +55,58 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 
   const [isManageMembersModalOpen, setIsManageMembersModalOpen] =
     useState(false);
-  const [conversationMembers, setConversationMembers] = useState<
-    ConversationMembers[]
-  >([]);
 
-  const socketRef = useRef<Socket | null>(null);
+  const handleNewMessage = useCallback(
+    async (messageId: string) => {
+      try {
+        const res = await get(`/v1/message/get/${messageId}`);
+        const newMessage = res.data;
+        setMessages((prevMessages) => [newMessage, ...prevMessages]);
+        onMessageChange();
+      } catch (error) {
+        console.error("Error fetching new message:", error);
+      }
+    },
+    [get, onMessageChange]
+  );
+
+  const handleUpdateMessageSocket = useCallback(
+    async (messageId: string) => {
+      try {
+        const res = await get(`/v1/message/get/${messageId}`);
+        const updatedMessage = res.data;
+        setMessages((prevMessages) =>
+          prevMessages.map((msg) =>
+            msg._id === updatedMessage._id ? updatedMessage : msg
+          )
+        );
+        onMessageChange();
+      } catch (error) {
+        console.error("Error fetching updated message:", error);
+      }
+    },
+    [get, onMessageChange]
+  );
+
+  const handleDeleteMessageSocket = useCallback(
+    (messageId: string) => {
+      setMessages((prevMessages) =>
+        prevMessages.filter((msg) => msg._id !== messageId)
+      );
+      onMessageChange();
+    },
+    [onMessageChange]
+  );
+
+  useSocketChat({
+    conversationId: conversation._id,
+    userId: userCurrent?._id,
+    remoteUrl,
+    onNewMessage: handleNewMessage,
+    onUpdateMessage: handleUpdateMessageSocket,
+    onDeleteMessage: handleDeleteMessageSocket,
+    onConversationUpdate: onMessageChange,
+  });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -71,76 +119,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   useEffect(() => {
     getOwner();
   }, [conversation]);
-
-  const initializeSocket = useCallback(() => {
-    const socket = io(remoteUrl, {
-      transports: ["websocket"],
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 3000,
-    });
-
-    socket.on("connect", () => {
-      console.log("Socket.IO Connected");
-      socket.emit("JOIN_CONVERSATION", conversation._id);
-    });
-
-    socket.on("disconnect", (reason: any) => {
-      console.log("Socket.IO Disconnected:", reason);
-    });
-
-    socket.on("CREATE_MESSAGE", async (messageId: any) => {
-      await fetchNewMessage(messageId);
-    });
-
-    socket.on("UPDATE_MESSAGE", async (messageId: string) => {
-      await fetchUpdatedMessage(messageId);
-    });
-
-    socket.on("DELETE_MESSAGE", (messageId: string) => {
-      setMessages((prevMessages) =>
-        prevMessages.filter((msg) => msg._id !== messageId)
-      );
-    });
-
-    socketRef.current = socket;
-
-    return () => {
-      if (socketRef.current) {
-        socket.emit("LEAVE_CONVERSATION", conversation._id);
-        socket.disconnect();
-      }
-    };
-  }, [conversation._id, remoteUrl]);
-
-  useEffect(() => {
-    const cleanup = initializeSocket();
-    return cleanup;
-  }, [initializeSocket]);
-
-  const fetchNewMessage = async (messageId: string) => {
-    try {
-      const res = await get(`/v1/message/get/${messageId}`);
-      const newMessage = res.data;
-      setMessages((prevMessages) => [newMessage, ...prevMessages]);
-    } catch (error) {
-      console.error("Error fetching new message:", error);
-    }
-  };
-
-  const fetchUpdatedMessage = async (messageId: string) => {
-    try {
-      const res = await get(`/v1/message/get/${messageId}`);
-      const updatedMessage = res.data;
-      setMessages((prevMessages) =>
-        prevMessages.map((msg) =>
-          msg._id === updatedMessage._id ? updatedMessage : msg
-        )
-      );
-    } catch (error) {
-      console.error("Error fetching updated message:", error);
-    }
-  };
 
   const getOwner = () => {
     if (conversation.isOwner === 1) {
