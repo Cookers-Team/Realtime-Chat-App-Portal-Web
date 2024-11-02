@@ -22,11 +22,13 @@ interface NavBarProps {
 const NavBar: React.FC<NavBarProps> = ({ setSelectedSection }) => {
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [editProfileModalVisible, setEditProfileModalVisible] = useState(false);
+  const [activeSection, setActiveSection] = useState("messages");
   const navigate = useNavigate();
   const { isDialogVisible, showDialog, hideDialog } = useDialog();
 
   const handleProfileClick = () => {
     setProfileModalVisible(true);
+    setActiveSection("profile");
   };
 
   const handleOpenEditModal = () => {
@@ -54,54 +56,92 @@ const NavBar: React.FC<NavBarProps> = ({ setSelectedSection }) => {
         <button
           data-tooltip-id="tooltip-profile"
           data-tooltip-content="Trang cá nhân"
-          className="focus:outline-none"
+          className={`focus:outline-none ${
+            activeSection === "profile" ? "glow-shake" : ""
+          }`}
           onClick={handleProfileClick}
         >
-          <User size={24} className="hover:scale-110 transition-transform" />
+          <User
+            size={24}
+            className={`transition-transform ${
+              activeSection === "profile" ? "scale-125" : "hover:scale-110"
+            }`}
+          />
         </button>
 
         <button
           data-tooltip-id="tooltip-messages"
           data-tooltip-content="Tin nhắn"
-          onClick={() => setSelectedSection("messages")}
-          className="focus:outline-none"
+          onClick={() => {
+            setSelectedSection("messages");
+            setActiveSection("messages");
+          }}
+          className={`focus:outline-none ${
+            activeSection === "messages" ? "text-yellow-400" : ""
+          }`}
         >
           <MessageCircle
             size={24}
-            className="hover:scale-110 transition-transform"
+            className={`transition-transform ${
+              activeSection === "messages" ? "scale-125" : "hover:scale-110"
+            }`}
           />
         </button>
 
         <button
           data-tooltip-id="tooltip-posts"
           data-tooltip-content="Bài đăng"
-          onClick={() => setSelectedSection("posts")}
-          className="focus:outline-none"
+          onClick={() => {
+            setSelectedSection("posts");
+            setActiveSection("posts");
+          }}
+          className={`focus:outline-none ${
+            activeSection === "posts" ? "text-yellow-400" : ""
+          }`}
         >
           <FileText
             size={24}
-            className="hover:scale-110 transition-transform"
+            className={`transition-transform ${
+              activeSection === "posts" ? "scale-125" : "hover:scale-110"
+            }`}
           />
         </button>
 
         <button
           data-tooltip-id="tooltip-friends"
           data-tooltip-content="Bạn bè"
-          onClick={() => setSelectedSection("friends")}
-          className="focus:outline-none"
+          onClick={() => {
+            setSelectedSection("friends");
+            setActiveSection("friends");
+          }}
+          className={`focus:outline-none ${
+            activeSection === "friends" ? "text-yellow-400" : ""
+          }`}
         >
-          <Users size={24} className="hover:scale-110 transition-transform" />
+          <Users
+            size={24}
+            className={`transition-transform ${
+              activeSection === "friends" ? "scale-125" : "hover:scale-110"
+            }`}
+          />
         </button>
 
         <button
           data-tooltip-id="tooltip-settings"
           data-tooltip-content="Cài đặt"
-          onClick={() => setSelectedSection("settings")}
-          className="focus:outline-none"
+          onClick={() => {
+            setSelectedSection("settings");
+            setActiveSection("settings");
+          }}
+          className={`focus:outline-none ${
+            activeSection === "settings" ? "text-yellow-400" : ""
+          }`}
         >
           <Settings
             size={24}
-            className="hover:scale-110 transition-transform"
+            className={`transition-transform ${
+              activeSection === "settings" ? "scale-125" : "hover:scale-110"
+            }`}
           />
         </button>
 
@@ -113,6 +153,7 @@ const NavBar: React.FC<NavBarProps> = ({ setSelectedSection }) => {
         >
           <LogOut size={24} className="hover:scale-110 transition-transform" />
         </button>
+
         <Tooltip id="tooltip-profile" style={{ zIndex: 100 }} />
         <Tooltip id="tooltip-messages" style={{ zIndex: 100 }} />
         <Tooltip id="tooltip-posts" style={{ zIndex: 100 }} />

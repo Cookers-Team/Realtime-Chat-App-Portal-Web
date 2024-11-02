@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import NavBar from "../components/NavBar";
 import { LoadingDialog } from "../components/Dialog";
-import Profile from "../components/modal/ProfileModal";
 import ChatList from "../components/chat/ChatList";
 import ChatWindow from "../components/chat/ChatWindow";
-import axios from "axios";
+import WelcomeIcon from "../assets/welcome.png";
 import useFetch from "../hooks/useFetch";
-import { Conversation, Friends, UserProfile } from "../types/chat";
+import { Conversation, UserProfile } from "../types/chat";
 import FriendListItem from "../components/friend/FriendListItem";
 import FriendsList from "../components/friend/FriendsList";
 import GroupList from "../components/friend/GroupList";
@@ -15,21 +14,25 @@ import PostListItem from "../components/post/PostListItem";
 import MyPosts from "../components/post/MyPosts";
 import FriendsPosts from "../components/post/FriendsPosts";
 import CommunityPosts from "../components/post/CommunityPosts";
+import useSocketChat from "../hooks/useSocketChat";
+import { remoteUrl } from "../types/constant";
+import { Menu, X } from "lucide-react";
 
 const Home = () => {
   const [selectedSection, setSelectedSection] = useState("messages");
-  const [isProfileVisible, setProfileVisible] = useState(false);
   const [selectedFriendSection, setSelectedFriendSection] = useState("friends");
   const [selectedPostSection, setSelectedPostSection] = useState("posts");
   const [userCurrent, setUserCurrent] = useState<UserProfile | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
-
   const [selectedConversation, setSelectedConversation] =
     useState<Conversation | null>(null);
-  const [availableUsers, setAvailableUsers] = useState<Friends[]>([]);
-
   const [isLoading, setIsLoading] = useState(false);
   const { get, post } = useFetch();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
 
   const fetchUserCurrent = useCallback(async () => {
     try {
@@ -39,77 +42,115 @@ const Home = () => {
     } catch (error) {
       console.error("Error getting user id:", error);
     }
-  }, []);
+  }, [get]);
+
+  const fetchConversations = useCallback(async () => {
+    // if (selectedSection !== "messages" || !userCurrent) return;
+    try {
+      const response = await get("/v1/conversation/list");
+      const conversations = response.data.content;
+      console.log("Fetching conversations...", conversations);
+      const filteredConversations = conversations.filter(
+        (conversation: Conversation) =>
+          conversation.lastMessage || conversation.kind === 1
+      );
+      setConversations(filteredConversations);
+    } catch (error) {
+      console.error("Error fetching conversations:", error);
+    }
+  }, [selectedSection, get, userCurrent]);
 
   useEffect(() => {
     fetchUserCurrent();
   }, [fetchUserCurrent]);
 
   useEffect(() => {
-    if (selectedSection === "messages") {
+    if (selectedSection === "messages" && userCurrent) {
       fetchConversations();
     }
-  }, [selectedSection]);
+  }, [selectedSection, userCurrent, fetchConversations]);
 
-  const fetchConversations = async () => {
-    setIsLoading(true);
-    try {
-      const response = await get("/v1/conversation/list");
-      const conversations = response.data.content;
-      console.log("Conversations:", conversations);
-      const filteredConversations = conversations.filter(
-        (conversation: Conversation) =>
-          conversation.lastMessage || conversation.kind === 1
-      );
-      setConversations(filteredConversations);
-
-      console.log("Filtered conversations:", filteredConversations);
-    } catch (error) {
-      console.error("Error fetching conversations:", error);
+  const handleMessageChange = useCallback(() => {
+    if (selectedSection === "messages" && userCurrent) {
+      console.log("Message changed, updating conversations...");
+      fetchConversations();
     }
-    setIsLoading(false);
-  };
+  }, [fetchConversations, selectedSection, userCurrent]);
 
-  const fetchAvailableUsers = async () => {
-    try {
-      const response = await get("/v1/user/list");
-      setAvailableUsers(response.data);
-    } catch (error) {
-      console.error("Error fetching users:", error);
-    }
-  };
+  const handleNewMessageHome = useCallback(
+    (messageId: string) => {
+      console.log("New message received in Home:", messageId);
+      handleMessageChange();
+    },
+    [handleMessageChange]
+  );
 
-  const handleCreateGroup = async (
-    groupName: string,
-    avatarUrl: string,
-    members: string[]
-  ) => {
-    setIsLoading(true);
-    try {
-      const response = await post("/v1/conversation/create", {
-        name: groupName,
-        avatarUrl,
-        conversationMembers: members,
-      });
-      const newGroup = response.data;
-      setConversations((prevConversations) => [newGroup, ...prevConversations]);
-    } catch (error) {
-      console.error("Error creating group:", error);
-    }
-    setIsLoading(false);
-  };
+  const handleUpdateMessageHome = useCallback(
+    (messageId: string) => {
+      console.log("Message updated in Home:", messageId);
+      handleMessageChange();
+    },
+    [handleMessageChange]
+  );
+
+  const handleDeleteMessageHome = useCallback(
+    (messageId: string) => {
+      console.log("Message deleted in Home:", messageId);
+      handleMessageChange();
+    },
+    [handleMessageChange]
+  );
+
+  useSocketChat({
+    userId: userCurrent?._id,
+    remoteUrl,
+    onNewMessage: handleNewMessageHome,
+    onUpdateMessage: handleUpdateMessageHome,
+    onDeleteMessage: handleDeleteMessageHome,
+    onConversationUpdate: handleMessageChange,
+  });
 
   return (
     <div className="flex h-screen">
       <NavBar setSelectedSection={setSelectedSection} />
 
-      <div className="w-1/4 bg-gray-200">
+      <button
+        onClick={toggleSidebar}
+        className="lg:hidden fixed top-4 right-4 z-50 p-2 bg-blue-600 text-white rounded-full shadow-lg"
+      >
+        {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
+      </button>
+
+      {isSidebarOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-30"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      <div
+        className={`
+          fixed lg:relative
+          w-3/4 lg:w-1/4
+          h-full
+          bg-gray-200
+          transition-transform duration-300 ease-in-out
+          z-40
+          ${
+            isSidebarOpen
+              ? "translate-x-0"
+              : "-translate-x-full lg:translate-x-0"
+          }
+        `}
+      >
         {selectedSection === "messages" ? (
           <ChatList
             conversations={conversations}
-            onSelectConversation={setSelectedConversation}
-            onCreateGroup={handleCreateGroup}
-            availableUsers={availableUsers}
+            onSelectConversation={(conversation) => {
+              setSelectedConversation(conversation);
+              setIsSidebarOpen(false);
+            }}
+            userCurrent={userCurrent}
           />
         ) : selectedSection === "friends" ? (
           <FriendListItem
@@ -123,16 +164,29 @@ const Home = () => {
           />
         ) : null}
       </div>
-      <div className="w-3/4 bg-white">
+
+      <div className="flex-1 bg-white">
         {selectedSection === "messages" ? (
           selectedConversation ? (
             <ChatWindow
               conversation={selectedConversation}
               userCurrent={userCurrent}
+              onMessageChange={handleMessageChange}
             />
           ) : (
-            <div className="flex items-center justify-center h-full">
-              <p>Chọn một cuộc trò chuyện để bắt đầu</p>
+            <div className="flex flex-col items-center justify-center h-full space-y-4 bg-gray-100 p-6 rounded-lg shadow-lg">
+              <p className="text-lg font-semibold text-gray-800">
+                Chào mừng đến với{" "}
+                <span className="text-blue-600">UTE Zalo</span>
+              </p>
+              <img
+                src={WelcomeIcon}
+                alt="Welcome icon"
+                className="w-1/2 md:w-1/3 lg:w-1/4 rounded-full shadow-md"
+              />
+              <div className="text-gray-600 text-sm italic text-center">
+                Chọn một cuộc trò chuyện để bắt đầu
+              </div>
             </div>
           )
         ) : selectedSection === "friends" ? (

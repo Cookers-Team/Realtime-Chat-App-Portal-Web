@@ -9,6 +9,7 @@ interface Conversation {
   name: string;
   kind: Number;
   lastMessage: {
+    _id: string;
     content: string;
     createdAt: string;
     user: {
@@ -55,6 +56,7 @@ interface ChatWindowProps {
     canUpdate: Number;
   };
   userCurrent: UserProfile | null;
+  onMessageChange: () => void;
 }
 
 interface ConversationMembers {

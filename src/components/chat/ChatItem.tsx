@@ -1,25 +1,36 @@
 import React from "react";
-import { Conversation } from "../../types/chat";
+import { Conversation, UserProfile } from "../../types/chat";
 import UserIcon from "../../assets/user_icon.png";
+import { decrypt } from "../../types/utils";
 
 interface ChatItemProps {
   conversation: Conversation;
   onClick: () => void;
+  userCurrent: UserProfile | null;
+  className?: string;
 }
 
-const ChatItem: React.FC<ChatItemProps> = ({ conversation, onClick }) => {
+const ChatItem: React.FC<ChatItemProps> = ({
+  conversation,
+  onClick,
+  userCurrent,
+  className,
+}) => {
   console.log("Conversation:", conversation);
   return (
     <div
-      className="flex items-center p-3 w-full border-b cursor-pointer hover:bg-gray-100"
       onClick={onClick}
+      className={`
+       flex items-center p-3 w-full border-b cursor-pointer hover:bg-gray-100
+        ${className}
+      `}
     >
       <img
         src={conversation.avatarUrl || UserIcon}
         alt="Avatar"
         className="rounded-full w-12 h-12 object-cover border-4 border-blue-100 shadow-lg"
       />
-      <div className="flex-1 max-w-72">
+      <div className="flex-1 max-w-72 ml-2">
         <h3 className="font-semibold flex justify-between">
           {conversation.name}
           <span className="text-xs text-gray-500 ml-auto mt-1">
@@ -38,9 +49,15 @@ const ChatItem: React.FC<ChatItemProps> = ({ conversation, onClick }) => {
                   : conversation.lastMessage.user.displayName}
                 :{" "}
               </span>
-              {conversation.lastMessage.content.length > 20
-                ? conversation.lastMessage.content.slice(0, 20) + "..."
-                : conversation.lastMessage.content}
+              {(() => {
+                const decryptedContent = decrypt(
+                  conversation.lastMessage.content,
+                  userCurrent?.secretKey
+                );
+                return decryptedContent.length > 20
+                  ? decryptedContent.slice(0, 20) + "..."
+                  : decryptedContent;
+              })()}
             </>
           ) : (
             " "
