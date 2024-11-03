@@ -74,7 +74,7 @@ const CommunityPosts = () => {
                 avatarUrl: post.user.avatarUrl,
               }}
               content={post.content}
-              imageUrl={post.imageUrl}
+              imageUrls={post.imageUrls}
               totalComments={post.totalComments}
               totalReactions={post.totalReactions}
               createdAt={post.createdAt}
