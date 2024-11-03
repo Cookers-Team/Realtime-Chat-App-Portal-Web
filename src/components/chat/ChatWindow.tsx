@@ -16,6 +16,7 @@ import {
   Check,
   UserPlus,
   Settings,
+  Heart,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { AlertDialog, AlertErrorDialog, LoadingDialog } from "../Dialog";
@@ -52,7 +53,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const [isConversationMembers, setIsConversationMembers] = useState<
     ConversationMembers[]
   >([]);
-
   const [isManageMembersModalOpen, setIsManageMembersModalOpen] =
     useState(false);
 
@@ -72,9 +72,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 
   const handleUpdateMessageSocket = useCallback(
     async (messageId: string) => {
+      console.log("Updating message socket:", messageId);
       try {
-        const res = await get(`/v1/message/get/${messageId}`);
-        const updatedMessage = res.data;
+        const resMessage = await get(`/v1/message/get/${messageId}`);
+        const updatedMessage = resMessage.data;
+
         setMessages((prevMessages) =>
           prevMessages.map((msg) =>
             msg._id === updatedMessage._id ? updatedMessage : msg
@@ -82,7 +84,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         );
         onMessageChange();
       } catch (error) {
-        console.error("Error fetching updated message:", error);
+        console.error("Error fetching updated message and reactions:", error);
       }
     },
     [get, onMessageChange]
@@ -209,6 +211,20 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     } catch (error) {
       console.error("Error updating message:", error);
       toast.error("Có lỗi xảy ra khi cập nhật tin nhắn");
+    }
+  };
+
+  const handleReaction = async (messageId: any) => {
+    try {
+      if (messages.find((msg) => msg._id === messageId)?.isReacted === 1) {
+        await del(`/v1/message-reaction/delete/${messageId}`);
+      } else {
+        await post("/v1/message-reaction/create", {
+          message: messageId,
+        });
+      }
+    } catch (error) {
+      console.error("Error handling reaction:", error);
     }
   };
 
@@ -361,13 +377,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                       message.user._id === userCurrent?._id
                         ? "bg-blue-500 text-white"
                         : "bg-white text-black shadow"
-                    }`}
+                    } relative`}
                   >
                     {message.user._id !== userCurrent?._id && (
                       <p className="font-semibold text-sm">
                         {message.user.displayName}
                       </p>
                     )}
+
                     {editingMessageId === message._id ? (
                       <div className="flex items-center">
                         <input
@@ -399,6 +416,27 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                     <p className="text-xs mt-1 opacity-70">
                       {message.createdAt}
                     </p>
+
+                    <div className="absolute -bottom-2 -right-2">
+                      <button
+                        onClick={() => handleReaction(message._id)}
+                        className="flex items-center space-x-1 bg-gray-50 shadow-md rounded-full p-2 hover:bg-gray-300 transition-colors"
+                      >
+                        <Heart
+                          size={14}
+                          className={
+                            message.isReacted == 1
+                              ? "text-red-500"
+                              : "text-gray-500"
+                          }
+                        />
+                        {message.totalReactions > 0 && (
+                          <span className="text-xs text-gray-500">
+                            {message.totalReactions}
+                          </span>
+                        )}
+                      </button>
+                    </div>
                   </div>
                   {message.user._id === userCurrent?._id && (
                     <div className="absolute top-0 right-0 -mt-1 -mr-1">
@@ -441,6 +479,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         )}
         <div ref={messagesEndRef} />
       </div>
+
       {isCanMessage === 1 || isOwner || conversation.kind == 2 ? (
         <form onSubmit={handleSendMessage} className="p-4 bg-white border-t">
           <div className="flex items-center">
