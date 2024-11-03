@@ -36,6 +36,9 @@ interface Message {
     avatarUrl: string;
   };
   content: string;
+  isReacted: number;
+  isUpdated: number;
+  totalReactions: number;
   createdAt: string;
 }
 
