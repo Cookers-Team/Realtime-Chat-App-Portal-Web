@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
+import * as CryptoJS from "crypto-js";
 dayjs.extend(customParseFormat);
 
 const dateToString = (val: any) => {
@@ -59,4 +60,31 @@ const uploadImage2 = async (
   }
   return null;
 };
-export { dateToString, stringToDate, uploadImage, uploadImage2, getDate };
+
+const encrypt = (value: any, secretKey: any) => {
+  return CryptoJS.AES.encrypt(value, secretKey).toString();
+};
+
+// const decrypt = (encryptedValue: any, secretKey: any) => {
+//   const decrypted = CryptoJS.AES.decrypt(encryptedValue, secretKey);
+//   return decrypted.toString(CryptoJS.enc.Utf8);
+// };
+const decrypt = (encryptedValue: any, secretKey: any) => {
+  try {
+    const decrypted = CryptoJS.AES.decrypt(encryptedValue, secretKey);
+    return decrypted.toString(CryptoJS.enc.Utf8);
+  } catch (error) {
+    console.error("Error decrypting message:", error);
+    return "";
+  }
+};
+
+export {
+  dateToString,
+  stringToDate,
+  uploadImage,
+  uploadImage2,
+  getDate,
+  encrypt,
+  decrypt,
+};

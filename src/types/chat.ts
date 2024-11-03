@@ -1,8 +1,15 @@
+interface UserProfile {
+  _id: string;
+  displayName: string;
+  avatarUrl: string;
+  secretKey: string;
+}
 interface Conversation {
   _id: string;
   name: string;
   kind: Number;
   lastMessage: {
+    _id: string;
     content: string;
     createdAt: string;
     user: {
@@ -48,7 +55,8 @@ interface ChatWindowProps {
     canAddMember: Number;
     canUpdate: Number;
   };
-  userIdCurrent: string | null;
+  userCurrent: UserProfile | null;
+  onMessageChange: () => void;
 }
 
 interface ConversationMembers {
@@ -80,4 +88,5 @@ export type {
   ChatWindowProps,
   ConversationMembers,
   Friends,
+  UserProfile,
 };
