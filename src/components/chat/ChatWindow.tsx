@@ -22,6 +22,7 @@ import { toast } from "react-toastify";
 import { AlertDialog, AlertErrorDialog, LoadingDialog } from "../Dialog";
 import { encrypt, decrypt } from "../../types/utils";
 import { remoteUrl } from "../../types/constant";
+import MessageSearch from "./MessageSearch";
 
 const ChatWindow: React.FC<ChatWindowProps> = ({
   conversation,
@@ -322,6 +323,21 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           </div>
         </div>
         <div className="ml-auto flex items-center space-x-2">
+          <MessageSearch
+            conversation={conversation}
+            userCurrent={userCurrent}
+            onMessageSelect={(messageId: any) => {
+              console.log("Message selected:", messageId);
+              const messageElement = document.getElementById(messageId);
+              if (messageElement) {
+                messageElement.scrollIntoView({ behavior: "smooth" });
+                messageElement.classList.add("bg-blue-100");
+                setTimeout(() => {
+                  messageElement.classList.remove("bg-blue-100");
+                }, 2000);
+              }
+            }}
+          />
           {conversation.kind === 1 && (
             <button
               onClick={() => {
@@ -364,6 +380,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             .reverse()
             .map((message) => (
               <div
+                id={message._id}
                 key={message._id}
                 className={`mb-4 flex ${
                   message.user._id === userCurrent?._id
