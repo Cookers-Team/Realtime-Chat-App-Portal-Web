@@ -1,15 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import InputField from '../InputField';
-import { Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import PostItem from './PostItem';
-import { LoadingDialog } from '../Dialog';
+import StoryViewer from './story/StoryViewer';
 import { useLoading } from '../../hooks/useLoading';
 import { remoteUrl } from '../../types/constant';
 import { toast } from 'react-toastify';
-import PostItem2 from './PostItem2';
+import InputField from '../InputField';
+import { Search } from 'lucide-react';
+import { LoadingDialog } from '../Dialog';
+import { PostModel } from '../../models/post/PostModel';
 
 const CommunityPosts = () => {
-  const [posts, setPosts] = useState([]);
+  const [posts, setPosts] = useState<PostModel[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const { isLoading, showLoading, hideLoading } = useLoading();
 
@@ -17,73 +18,87 @@ const CommunityPosts = () => {
     fetchPosts();
   }, []);
 
-  const fetchPosts = async () => {
-    showLoading();
-    try {
-      const response = await fetch(`${remoteUrl}/v1/post/list`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-        },
-      });
-      const data = await response.json();
-      if (data.result) {
-        setPosts(data.data.content);
-      } else {
-        toast.error('Không thể tải bài viết');
-      }
-    } catch (error) {
-      toast.error('Đã xảy ra lỗi');
-    } finally {
-      hideLoading();
+const fetchPosts = async () => {
+  showLoading();
+  try {
+    const response = await fetch(`${remoteUrl}/v1/post/list?kind=1`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+      },
+    });
+    const data = await response.json();
+    if (data.result) {
+      console.log(`Tổng số bài viết từ API: ${data.data.content.length}`);
+      
+      // Lọc bài viết có status === 2 (bài viết đã được duyệt)
+      const communityPosts = data.data.content.filter((post: PostModel) => post.status === 2);
+      console.log(`Số bài viết sau khi lọc: ${communityPosts.length}`);
+      
+      setPosts(communityPosts);
+    } else {
+      toast.error('Không thể tải bài viết của bạn bè');
     }
+  } catch (error) {
+    toast.error('Đã xảy ra lỗi khi tải bài viết');
+  } finally {
+    hideLoading();
+  }
+};
+
+
+  const handleDeletePost = async (postId: string) => {
+    // Add delete functionality here
+    // After successful deletion, refresh the posts
+    fetchPosts();
   };
 
-  const filteredPosts = posts.filter((post: any) =>
+  const handleEditPost = async (postId: string) => {
+    // Add edit functionality here
+    // After successful edit, refresh the posts
+    fetchPosts();
+  };
+
+  const filteredPosts = posts.filter((post) =>
     post.user.displayName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
     <div className="flex flex-col h-full">
-    
       <div className="sticky top-0 bg-white z-10 shadow-sm">
         <h1 className="text-xl font-bold text-center py-2 m-0">Bài viết của bạn bè</h1>
       </div>
 
-    
-      <div className="flex-grow overflow-y-auto p-4">
-     
-        <div className="max-w-2xl mx-auto mb-6">
-          <InputField
-            placeholder="Tìm kiếm bài viết theo tên"
-            icon={Search}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            className="w-full h-10 pl-10 pr-4 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-   
-        {filteredPosts.length > 0 ? (
-          filteredPosts.map((post: any) => (
-            <PostItem2
-              key={post._id}
-              user={{
-                displayName: post.user.displayName,
-                avatarUrl: post.user.avatarUrl,
-              }}
-              content={post.content}
-              imageUrls={post.imageUrls}
-              totalComments={post.totalComments}
-              totalReactions={post.totalReactions}
-              createdAt={post.createdAt}
+      <div className="flex-grow overflow-y-auto">
+        <div className="p-4">
+          <div className="max-w-2xl mx-auto mb-6">
+            <InputField
+              placeholder="Tìm kiếm bài viết theo tên"
+              icon={Search}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              className="w-full h-10 pl-10 pr-4 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-          ))
-        ) : (
-          <p className="text-center">Không có bài viết nào.</p>
-        )}
+          </div>
+
+
+          {filteredPosts.length > 0 ? (
+            filteredPosts.map((post) => (
+              <PostItem
+                key={post._id}
+                {...post}
+                onEdit={() => handleEditPost(post._id)}
+                onDelete={() => handleDeletePost(post._id)}
+                isPost={2}
+              />
+            ))
+          ) : (
+            <p className="text-center text-gray-500">Không có bài viết nào từ bạn bè.</p>
+          )}
+        </div>
       </div>
+
       <LoadingDialog isVisible={isLoading} />
     </div>
   );
