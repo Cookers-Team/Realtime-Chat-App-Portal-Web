@@ -101,6 +101,22 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     [onMessageChange]
   );
 
+  const handleUpdateConversationSocket = useCallback(
+    async (conversationId: string) => {
+      // console.log("Updating message socket:", messageId);
+      try {
+        const resMessage = await get(`/v1/conversation/get/${conversationId}`);
+        setIsCanUpdate(resMessage.data.canUpdate);
+        setIsCanMessage(resMessage.data.canMessage);
+        setIsCanAddMember(resMessage.data.canAddMember);
+        // onMessageChange();
+      } catch (error) {
+        console.error("Error fetching updated message and reactions:", error);
+      }
+    },
+    [get]
+  );
+
   useSocketChat({
     conversationId: conversation._id,
     userId: userCurrent?._id,
@@ -109,6 +125,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     onUpdateMessage: handleUpdateMessageSocket,
     onDeleteMessage: handleDeleteMessageSocket,
     onConversationUpdate: onMessageChange,
+    onHandleUpdateConversation: handleUpdateConversationSocket,
   });
 
   const scrollToBottom = () => {
@@ -138,6 +155,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       setIsCanAddMember(conversation.canAddMember);
 
       const response = await get("/v1/message/list", {
+        isPaged: 0,
         conversation: conversation._id,
       });
 

@@ -102,6 +102,10 @@ const Home = () => {
     [handleMessageChange]
   );
 
+  const handleUpdateConversation = useCallback(() => {
+    console.log("Conversation updated in Home");
+    // handleMessageChange();
+  }, []);
   useSocketChat({
     userId: userCurrent?._id,
     remoteUrl,
@@ -109,6 +113,7 @@ const Home = () => {
     onUpdateMessage: handleUpdateMessageHome,
     onDeleteMessage: handleDeleteMessageHome,
     onConversationUpdate: handleMessageChange,
+    onHandleUpdateConversation: handleUpdateConversation,
   });
 
   return (
@@ -215,14 +220,13 @@ const Home = () => {
               )}
             </div>
             {/* Phần thông báo bên phải */}
-        
-              {/* Phần thông báo bên phải */}
-              <div className="flex-1  bg-gray-100 p-4">
-                <NotificationPanel />
-              
+
+            {/* Phần thông báo bên phải */}
+            <div className="flex-1  bg-gray-100 p-4">
+              <NotificationPanel />
             </div>
           </div>
-        ): selectedSection === "settings" ? (
+        ) : selectedSection === "settings" ? (
           <div>
             <h2 className="text-xl font-semibold mb-4">Cài đặt</h2>
             <p>Hiển thị các cài đặt tại đây...</p>
