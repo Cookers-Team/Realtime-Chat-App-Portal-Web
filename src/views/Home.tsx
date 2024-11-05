@@ -17,6 +17,7 @@ import CommunityPosts from "../components/post/CommunityPosts";
 import useSocketChat from "../hooks/useSocketChat";
 import { remoteUrl } from "../types/constant";
 import { Menu, X } from "lucide-react";
+import NotificationPanel from "../components/notification/NotificationPanel";
 
 const Home = () => {
   const [selectedSection, setSelectedSection] = useState("messages");
@@ -200,16 +201,28 @@ const Home = () => {
             <FriendsList />
           )
         ) : selectedSection === "posts" ? (
-          selectedPostSection === "myPosts" ? (
-            <MyPosts />
-          ) : selectedPostSection === "friendsPosts" ? (
-            <FriendsPosts />
-          ) : selectedPostSection === "communityPosts" ? (
-            <CommunityPosts />
-          ) : (
-            <MyPosts />
-          )
-        ) : selectedSection === "settings" ? (
+          <div className="flex h-full">
+            {/* Container cho hai phần bên trái */}
+            <div className="flex-2 w-2/3 bg-white p-4">
+              {selectedPostSection === "myPosts" ? (
+                <MyPosts />
+              ) : selectedPostSection === "friendsPosts" ? (
+                <FriendsPosts />
+              ) : selectedPostSection === "communityPosts" ? (
+                <CommunityPosts />
+              ) : (
+                <MyPosts />
+              )}
+            </div>
+            {/* Phần thông báo bên phải */}
+        
+              {/* Phần thông báo bên phải */}
+              <div className="flex-1  bg-gray-100 p-4">
+                <NotificationPanel />
+              
+            </div>
+          </div>
+        ): selectedSection === "settings" ? (
           <div>
             <h2 className="text-xl font-semibold mb-4">Cài đặt</h2>
             <p>Hiển thị các cài đặt tại đây...</p>
