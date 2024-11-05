@@ -3,6 +3,8 @@ import { ChevronLeft, ChevronRight, Pause, Play, Trash2 } from 'lucide-react';
 import { StoryModel } from '../../../models/story/StoryModel';
 import { remoteUrl } from '../../../types/constant';
 import { toast } from 'react-toastify';
+import { useLoading } from '../../../hooks/useLoading';
+import { LoadingDialog } from '../../Dialog';
 
 const StoryViewer = () => {
   const [stories, setStories] = useState<StoryModel[]>([]);
@@ -12,6 +14,8 @@ const StoryViewer = () => {
   const [isPaused, setIsPaused] = useState(false);
   const [startIndex, setStartIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const { isLoading, showLoading, hideLoading } = useLoading();
   
   const storiesPerPage = 4;
   const autoTransitionTime = 5000;
@@ -55,6 +59,7 @@ const StoryViewer = () => {
   };
 
   const deleteStory = async (storyId: string) => {
+    showLoading();
     try {
       const response = await fetch(`${remoteUrl}/v1/story/delete/${storyId}`, {
         method: 'DELETE',
@@ -72,6 +77,8 @@ const StoryViewer = () => {
       }
     } catch (error) {
       toast.error('Đã xảy ra lỗi khi xóa story');
+    }finally {
+      hideLoading();
     }
   };
 
@@ -92,7 +99,22 @@ const StoryViewer = () => {
       return null;
     }
   };
+  const handleDeleteClick = () => {
+    setIsPaused(true); // Tạm dừng story khi hiển thị dialog
+    setShowConfirmDialog(true);
+  };
 
+  const handleConfirmDelete = async () => {
+    if (currentStory) {
+      await deleteStory(currentStory._id);
+      setShowConfirmDialog(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setShowConfirmDialog(false);
+    setIsPaused(false); // Tiếp tục story khi đóng dialog
+  };
   const openStoryViewer = async (story: StoryModel) => {
     const fullStory = await fetchStoryById(story._id);
     if (fullStory) {
@@ -135,14 +157,14 @@ const StoryViewer = () => {
   };
   
 
-  const formatCreatedAt = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('vi-VN', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: false 
-    });
-  };
+  // const formatCreatedAt = (dateString: string) => {
+  //   const date = new Date(dateString);
+  //   return date.toLocaleTimeString('vi-VN', { 
+  //     hour: '2-digit', 
+  //     minute: '2-digit',
+  //     hour12: false 
+  //   });
+  // };
 
   const groupedStories = stories.reduce((acc: { [key: string]: StoryModel[] }, story) => {
     if (!acc[story.user._id]) {
@@ -157,11 +179,11 @@ const StoryViewer = () => {
   
   const nextStories = () => {
     const maxStartIndex = Math.max(0, stories.length - storiesPerPage);
-    setStartIndex((prev) => Math.min(prev + 1, maxStartIndex)); // Chuyển 1 story
+    setStartIndex((prev) => Math.min(prev + 1, maxStartIndex));
   };
 
   const prevStories = () => {
-    setStartIndex((prev) => Math.max(prev - 1, 0)); // Chuyển 1 story
+    setStartIndex((prev) => Math.max(prev - 1, 0)); 
   };
 
   const visibleStories = stories.slice(startIndex, startIndex + storiesPerPage);
@@ -220,6 +242,40 @@ const StoryViewer = () => {
           >
             ×
           </button>
+          {showConfirmDialog && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center">
+              {/* Overlay */}
+              <div 
+                className="absolute inset-0 bg-black bg-opacity-50" 
+                onClick={handleCancelDelete}
+              />
+              
+              {/* Dialog */}
+              <div className="relative bg-white rounded-lg p-6 min-w-[300px] z-[61]">
+                <h3 className="text-lg font-semibold mb-4 text-gray-900">
+                  Xác nhận xóa
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Bạn có chắc chắn muốn xóa story này không?
+                </p>
+                <div className="flex justify-end space-x-3">
+                  <button
+                    onClick={handleCancelDelete}
+                    className="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    onClick={handleConfirmDelete}
+                    className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors"
+                  >
+                    Xóa
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Main Container with Border */}
           <div className="relative w-[33vw] h-screen bg-black border-x-2 border-white">
             {/* Top Section with Progress Bars */}
@@ -252,7 +308,7 @@ const StoryViewer = () => {
                   />
                   <div>
                     <p className="font-semibold text-sm">{currentStory.user.displayName}</p>
-                    <p className="text-xs opacity-75">{formatCreatedAt(currentStory.createdAt)}</p>
+                    <p className="text-xs opacity-75">{currentStory.createdAt}</p>
                   </div>
                 </div>
 
@@ -267,11 +323,11 @@ const StoryViewer = () => {
 
                   {currentStory.isOwner === 1 && (
                     <button
-                      onClick={() => deleteStory(currentStory._id)}
-                      className="text-white p-2 hover:bg-red-600/20 rounded-full"
-                    >
-                      <Trash2 size={20} />
-                    </button>
+                    onClick={handleDeleteClick}
+                    className="text-white p-2 hover:bg-red-600/20 rounded-full"
+                  >
+                    <Trash2 size={20} />
+                  </button>
                   )}
                 </div>
               </div>
@@ -307,6 +363,7 @@ const StoryViewer = () => {
           </div>
         </div>
       )}
+       <LoadingDialog isVisible={isLoading} />
     </div>
   );
 };
