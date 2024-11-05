@@ -104,7 +104,7 @@ const StoryViewer = () => {
   };
 
   const handleNextStory = async () => {
-    setIsTransitioning(true); // Đánh dấu đang trong quá trình chuyển tiếp
+    setIsTransitioning(true); 
   
     if (!currentStory?.nextStory) {
       setIsPopupVisible(false);
@@ -117,7 +117,7 @@ const StoryViewer = () => {
       setCurrentStory(nextStory);
       setIsPaused(false);
       setProgress(0);
-      setIsTransitioning(false); // Kết thúc quá trình chuyển tiếp
+      setIsTransitioning(false);
     }
   };
   
