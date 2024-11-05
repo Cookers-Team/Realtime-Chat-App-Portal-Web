@@ -1,3 +1,4 @@
+import { on } from "events";
 import { useEffect, useRef, useCallback } from "react";
 import io, { Socket } from "socket.io-client";
 
@@ -9,6 +10,7 @@ interface UseSocketChatProps {
   onUpdateMessage: (messageId: string) => void;
   onDeleteMessage: (messageId: string) => void;
   onConversationUpdate?: () => void;
+  onHandleUpdateConversation: (conversationId: string) => void;
 }
 
 export const useSocketChat = ({
@@ -19,6 +21,7 @@ export const useSocketChat = ({
   onUpdateMessage,
   onDeleteMessage,
   onConversationUpdate,
+  onHandleUpdateConversation,
 }: UseSocketChatProps) => {
   const socketRef = useRef<Socket | null>(null);
 
@@ -37,6 +40,7 @@ export const useSocketChat = ({
       }
       if (userId) {
         socket.emit("JOIN_USER", userId);
+        socket.emit("JOIN_NOTIFICATION", userId);
       }
     });
 
@@ -63,6 +67,16 @@ export const useSocketChat = ({
       if (onConversationUpdate) {
         onConversationUpdate();
       }
+    });
+
+    socket.on("NEW_NOTIFICATION", (userId: string) => {
+      if (onConversationUpdate) {
+        onConversationUpdate();
+      }
+    });
+
+    socket.on("UPDATE_CONVERSATION", (conversationId: string) => {
+      onHandleUpdateConversation(conversationId);
     });
 
     socketRef.current = socket;
