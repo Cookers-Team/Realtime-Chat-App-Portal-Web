@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { EmailPattern, remoteUrl } from "../../types/constant";
+import UserIcon from "../../assets/user_icon.png";
 import {
   X,
   Loader,
   CircleUserRoundIcon,
   MailIcon,
-  CalendarIcon,
   InfoIcon,
   CameraIcon,
   PhoneIcon,
@@ -390,8 +390,8 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                   />
                 ) : (
                   <img
-                    src="https://via.placeholder.com/112"
-                    alt="Placeholder"
+                    src={UserIcon}
+                    alt="Avatar User"
                     className="w-28 h-28 rounded-full object-cover border-4 border-blue-100"
                   />
                 )}
