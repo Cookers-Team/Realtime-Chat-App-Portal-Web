@@ -37,8 +37,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const [friends, setFriends] = useState<Friends[]>([]);
   const [selectedFriends, setSelectedFriends] = useState<string | null>(null);
-  const { get, post, del, put } = useFetch();
+  const { get, post, del, put, loading } = useFetch();
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
+  const scrollContainerRef = useRef<null | HTMLDivElement>(null);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [isAlertDialogOpen, setIsAlertDialogOpen] = useState(false);
@@ -56,6 +57,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   >([]);
   const [isManageMembersModalOpen, setIsManageMembersModalOpen] =
     useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const size = 20;
+  const [isScrollToBottom, setIsScrollToBottom] = useState(false);
 
   const handleNewMessage = useCallback(
     async (messageId: string) => {
@@ -63,6 +68,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         const res = await get(`/v1/message/get/${messageId}`);
         const newMessage = res.data;
         setMessages((prevMessages) => [newMessage, ...prevMessages]);
+        setIsScrollToBottom(true);
         onMessageChange();
       } catch (error) {
         console.error("Error fetching new message:", error);
@@ -134,7 +140,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+    setIsScrollToBottom(false);
+  }, [isScrollToBottom]);
 
   useEffect(() => {
     getOwner();
@@ -146,43 +153,76 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   };
 
-  const fetchMessages = useCallback(async () => {
-    if (!conversation._id) return;
-    setIsLoadingMessages(true);
-    try {
-      setIsCanUpdate(conversation.canUpdate);
-      setIsCanMessage(conversation.canMessage);
-      setIsCanAddMember(conversation.canAddMember);
+  const fetchMessages = useCallback(
+    async (pageNumber: number) => {
+      if (!conversation._id) return;
+      setIsLoadingMessages(true);
 
-      const response = await get("/v1/message/list", {
-        isPaged: 0,
-        conversation: conversation._id,
-      });
+      try {
+        setIsCanUpdate(conversation.canUpdate);
+        setIsCanMessage(conversation.canMessage);
+        setIsCanAddMember(conversation.canAddMember);
 
-      console.log("Response messages:", response.data.content);
+        const response = await get("/v1/message/list", {
+          page: pageNumber,
+          size,
+          conversation: conversation._id,
+        });
 
-      const message = response.data.content.map((msg: any) => ({
-        ...msg,
-      }));
-      setMessages(message);
+        console.log("Response messages:", response.data.content);
+        const newMessages = response.data.content;
+        if (pageNumber === 0) {
+          setMessages([...newMessages]);
+          setIsScrollToBottom(true);
+        } else {
+          setMessages((prev) => [...prev, ...newMessages]);
+        }
+        setHasMore(newMessages.length === size);
+        setPage(pageNumber);
 
-      const membersResponse = await get(`/v1/conversation-member/list`, {
-        conversation: conversation._id,
-      });
+        const membersResponse = await get(`/v1/conversation-member/list`, {
+          conversation: conversation._id,
+        });
 
-      setIsConversationMembers(membersResponse.data.content);
-      setConversationMembersIdList(
-        membersResponse.data.content.map((member: any) => member.user._id)
-      );
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-    } finally {
-      setIsLoadingMessages(false);
+        setIsConversationMembers(membersResponse.data.content);
+        setConversationMembersIdList(
+          membersResponse.data.content.map((member: any) => member.user._id)
+        );
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+      } finally {
+        setIsLoadingMessages(false);
+      }
+    },
+    [conversation._id, get, userCurrent?._id]
+  );
+
+  const handleScroll = async () => {
+    if (
+      scrollContainerRef.current &&
+      scrollContainerRef.current.scrollTop === 0 &&
+      !isLoadingMessages &&
+      hasMore
+    ) {
+      const firstMessage = scrollContainerRef.current.firstElementChild;
+      const previousScrollTop = scrollContainerRef.current.scrollTop;
+      const previousOffsetTop = firstMessage
+        ? (firstMessage as HTMLElement).offsetTop
+        : 0;
+
+      await fetchMessages(page + 1);
+
+      if (firstMessage) {
+        scrollContainerRef.current.scrollTop =
+          (firstMessage as HTMLElement).offsetTop -
+          previousOffsetTop +
+          previousScrollTop;
+      }
     }
-  }, [conversation._id, get, userCurrent?._id]);
+  };
 
   useEffect(() => {
-    fetchMessages();
+    fetchMessages(0);
   }, [fetchMessages]);
 
   const handleSendMessage = async (e: any) => {
@@ -344,18 +384,45 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           <MessageSearch
             conversation={conversation}
             userCurrent={userCurrent}
-            onMessageSelect={(messageId: any) => {
+            onMessageSelect={async (messageId: any) => {
               console.log("Message selected:", messageId);
-              const messageElement = document.getElementById(messageId);
+
+              let messageElement: HTMLElement | null =
+                document.getElementById(messageId);
               if (messageElement) {
-                messageElement.scrollIntoView({ behavior: "smooth" });
+                messageElement.scrollIntoView({
+                  behavior: "smooth",
+                  block: "center",
+                });
                 messageElement.classList.add("bg-blue-100");
                 setTimeout(() => {
-                  messageElement.classList.remove("bg-blue-100");
+                  messageElement?.classList.remove("bg-blue-100");
                 }, 2000);
+              } else {
+                let page = 0;
+                let messageFound = false;
+
+                while (!messageFound) {
+                  await fetchMessages(page);
+                  messageElement = document.getElementById(messageId);
+                  if (messageElement) {
+                    messageFound = true;
+                    messageElement.scrollIntoView({
+                      behavior: "smooth",
+                      block: "center",
+                    });
+                    messageElement.classList.add("bg-blue-100");
+                    setTimeout(() => {
+                      messageElement?.classList.remove("bg-blue-100");
+                    }, 5000);
+                  } else {
+                    page++;
+                  }
+                }
               }
             }}
           />
+
           {conversation.kind === 1 && (
             <button
               onClick={() => {
@@ -389,129 +456,133 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           )}
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto p-4">
-        {isLoadingMessages ? (
-          <div className="text-center">Loading messages...</div>
-        ) : (
-          messages
-            .slice()
-            .reverse()
-            .map((message) => (
-              <div
-                id={message._id}
-                key={message._id}
-                className={`mb-4 flex ${
-                  message.user._id === userCurrent?._id
-                    ? "justify-end"
-                    : "justify-start"
-                }`}
-              >
-                <div className="relative">
-                  <div
-                    className={`p-3 rounded-lg max-w-xs break-all ${
-                      message.user._id === userCurrent?._id
-                        ? "bg-blue-500 text-white"
-                        : "bg-white text-black shadow"
-                    } relative`}
-                  >
-                    {message.user._id !== userCurrent?._id && (
-                      <p className="font-semibold text-sm">
-                        {message.user.displayName}
-                      </p>
-                    )}
+      <div
+        className="flex-1 overflow-y-auto p-4"
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+      >
+        {isLoadingMessages && (
+          <div className="flex justify-center items-center h-32">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          </div>
+        )}
+        {messages
+          .slice()
+          .reverse()
+          .map((message) => (
+            <div
+              id={message._id}
+              key={message._id}
+              className={`mb-4 flex ${
+                message.user._id === userCurrent?._id
+                  ? "justify-end"
+                  : "justify-start"
+              }`}
+            >
+              <div className="relative">
+                <div
+                  className={`p-3 rounded-lg max-w-xs break-all ${
+                    message.user._id === userCurrent?._id
+                      ? "bg-blue-500 text-white"
+                      : "bg-white text-black shadow"
+                  } relative`}
+                >
+                  {message.user._id !== userCurrent?._id && (
+                    <p className="font-semibold text-sm">
+                      {message.user.displayName}
+                    </p>
+                  )}
 
-                    {editingMessageId === message._id ? (
-                      <div className="flex items-center">
-                        <input
-                          type="text"
-                          value={editedMessage}
-                          onChange={(e) => setEditedMessage(e.target.value)}
-                          className="w-full text-black p-2 border rounded-md"
-                        />
+                  {editingMessageId === message._id ? (
+                    <div className="flex items-center">
+                      <input
+                        type="text"
+                        value={editedMessage}
+                        onChange={(e) => setEditedMessage(e.target.value)}
+                        className="w-full text-black p-2 border rounded-md"
+                      />
+                      <button
+                        onClick={() => setEditingMessageId(null)}
+                        className="ml-2 p-2 text-red-600 hover:text-red-800 transition-colors"
+                      >
+                        <X size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleUpdateMessage(message._id)}
+                        className="px-2 py-1 bg-green-500 text-white rounded-md"
+                      >
+                        <Check size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="mt-1">
+                      {message.content
+                        ? decrypt(message.content, userCurrent?.secretKey)
+                        : "Không thể hiển thị tin nhắn"}
+                    </p>
+                  )}
+                  <p className="text-xs mt-1 opacity-70">{message.createdAt}</p>
+
+                  <div className="absolute -bottom-2 -right-2">
+                    <button
+                      onClick={() => handleReaction(message._id)}
+                      className="flex items-center space-x-1 bg-gray-50 shadow-md rounded-full p-2 hover:bg-gray-300 transition-colors"
+                    >
+                      <Heart
+                        size={14}
+                        className={
+                          message.isReacted == 1
+                            ? "text-red-500"
+                            : "text-gray-500"
+                        }
+                      />
+                      {message.totalReactions > 0 && (
+                        <span className="text-xs text-gray-500">
+                          {message.totalReactions}
+                        </span>
+                      )}
+                    </button>
+                  </div>
+                </div>
+                {message.user._id === userCurrent?._id && (
+                  <div className="absolute top-0 right-0 -mt-1 -mr-1">
+                    <button
+                      onClick={() => toggleDropdown(message._id)}
+                      className="p-1 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
+                    >
+                      <MoreVertical size={16} />
+                    </button>
+                    {activeDropdown === message._id && (
+                      <div className="absolute right-0 mt-1 w-32 bg-white rounded-md shadow-lg z-10">
                         <button
-                          onClick={() => setEditingMessageId(null)}
-                          className="ml-2 p-2 text-red-600 hover:text-red-800 transition-colors"
+                          onClick={() => {
+                            setEditingMessageId(message._id);
+                            setEditedMessage(
+                              decrypt(message.content, userCurrent.secretKey)
+                            );
+                            setActiveDropdown(null);
+                          }}
+                          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         >
-                          <X size={16} />
+                          <Edit size={16} className="mr-2" /> Chỉnh sửa
                         </button>
                         <button
-                          onClick={() => handleUpdateMessage(message._id)}
-                          className="px-2 py-1 bg-green-500 text-white rounded-md"
+                          onClick={() => {
+                            handleDeleteMessage(message._id);
+                            setActiveDropdown(null);
+                          }}
+                          className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                         >
-                          <Check size={16} />
+                          <Trash size={16} className="mr-2" /> Xoá
                         </button>
                       </div>
-                    ) : (
-                      <p className="mt-1">
-                        {message.content
-                          ? decrypt(message.content, userCurrent?.secretKey)
-                          : "Không thể hiển thị tin nhắn"}
-                      </p>
                     )}
-                    <p className="text-xs mt-1 opacity-70">
-                      {message.createdAt}
-                    </p>
-
-                    <div className="absolute -bottom-2 -right-2">
-                      <button
-                        onClick={() => handleReaction(message._id)}
-                        className="flex items-center space-x-1 bg-gray-50 shadow-md rounded-full p-2 hover:bg-gray-300 transition-colors"
-                      >
-                        <Heart
-                          size={14}
-                          className={
-                            message.isReacted == 1
-                              ? "text-red-500"
-                              : "text-gray-500"
-                          }
-                        />
-                        {message.totalReactions > 0 && (
-                          <span className="text-xs text-gray-500">
-                            {message.totalReactions}
-                          </span>
-                        )}
-                      </button>
-                    </div>
                   </div>
-                  {message.user._id === userCurrent?._id && (
-                    <div className="absolute top-0 right-0 -mt-1 -mr-1">
-                      <button
-                        onClick={() => toggleDropdown(message._id)}
-                        className="p-1 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
-                      >
-                        <MoreVertical size={16} />
-                      </button>
-                      {activeDropdown === message._id && (
-                        <div className="absolute right-0 mt-1 w-32 bg-white rounded-md shadow-lg z-10">
-                          <button
-                            onClick={() => {
-                              setEditingMessageId(message._id);
-                              setEditedMessage(
-                                decrypt(message.content, userCurrent.secretKey)
-                              );
-                              setActiveDropdown(null);
-                            }}
-                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          >
-                            <Edit size={16} className="mr-2" /> Chỉnh sửa
-                          </button>
-                          <button
-                            onClick={() => {
-                              handleDeleteMessage(message._id);
-                              setActiveDropdown(null);
-                            }}
-                            className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                          >
-                            <Trash size={16} className="mr-2" /> Xoá
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
-            ))
-        )}
+            </div>
+          ))}
+
         <div ref={messagesEndRef} />
       </div>
 

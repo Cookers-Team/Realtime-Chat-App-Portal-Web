@@ -175,6 +175,7 @@ const Home = () => {
         {selectedSection === "messages" ? (
           selectedConversation ? (
             <ChatWindow
+              key={selectedConversation._id}
               conversation={selectedConversation}
               userCurrent={userCurrent}
               onMessageChange={handleMessageChange}
