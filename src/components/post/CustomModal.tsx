@@ -2,7 +2,7 @@ import { XIcon } from "lucide-react";
 import { LoadingDialog } from "../Dialog";
 
 // Định nghĩa kiểu cho `color`
-type ColorType = 'blue' | 'red' | 'green' | 'yellow';
+type ColorType = "blue" | "red" | "green" | "yellow";
 
 const CustomModal = ({
   onClose,
@@ -21,13 +21,15 @@ const CustomModal = ({
   buttonText?: string;
   onButtonClick: () => void;
   loading?: boolean;
-  color?: ColorType;  // Khai báo kiểu rõ ràng cho color
+  color?: ColorType; // Khai báo kiểu rõ ràng cho color
 }) => {
   const colorClass: Record<ColorType, string> = {
-    blue: 'text-blue-500 bg-blue-600 hover:bg-blue-800 focus:ring-blue-500',
-    red: 'text-red-500 bg-red-600 hover:bg-red-800 focus:ring-red-500',
-    green: 'text-green-500 bg-green-600 hover:bg-green-800 focus:ring-green-500',
-    yellow: 'text-yellow-500 bg-yellow-600 hover:bg-yellow-800 focus:ring-yellow-500',
+    blue: "text-blue-500 bg-blue-600 hover:bg-blue-800 focus:ring-blue-500",
+    red: "text-red-500 bg-red-600 hover:bg-red-800 focus:ring-red-500",
+    green:
+      "text-green-500 bg-green-600 hover:bg-green-800 focus:ring-green-500",
+    yellow:
+      "text-yellow-500 bg-yellow-600 hover:bg-yellow-800 focus:ring-yellow-500",
   };
 
   return (
@@ -39,7 +41,11 @@ const CustomModal = ({
         >
           <XIcon size={30} />
         </button>
-        <h2 className={`text-2xl font-bold mb-6 text-center ${colorClass[color].split(' ')[0]}`}>
+        <h2
+          className={`text-2xl font-bold mb-6 text-center ${
+            colorClass[color].split(" ")[0]
+          }`}
+        >
           {title}
         </h2>
         {topComponent && (

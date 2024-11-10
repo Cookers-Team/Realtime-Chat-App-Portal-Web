@@ -15,7 +15,7 @@ const ChatItem: React.FC<ChatItemProps> = ({
   onClick,
   userCurrent,
   className,
-}) => {
+}) => { 
   console.log("Conversation:", conversation);
   return (
     <div

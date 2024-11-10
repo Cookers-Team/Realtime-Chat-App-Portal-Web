@@ -301,7 +301,6 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     }
   };
 
-  // Thêm hàm xử lý xác thực OTP
   const handleVerifyOTP = async () => {
     if (!isValidOTPForm()) return;
     try {

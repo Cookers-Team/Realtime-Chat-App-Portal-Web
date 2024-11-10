@@ -156,4 +156,10 @@ const LoadingDialog = ({
   );
 };
 
-export { ConfimationDialog, AlertDialog, LoadingDialog, AlertErrorDialog };
+export {
+  ConfimationDialog,
+  AlertDialog,
+  LoadingDialog,
+  AlertErrorDialog,
+  CustomModal,
+};
