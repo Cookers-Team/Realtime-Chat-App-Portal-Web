@@ -43,23 +43,10 @@ interface Message {
 }
 
 interface ChatWindowProps {
-  conversation: {
-    _id: string;
-    name: string;
-    kind: Number;
-    avatarUrl: string;
-    totalMembers: number;
-    lastLogin: string;
-    isOwner: number;
-    owner: {
-      _id: string;
-    };
-    canMessage: Number;
-    canAddMember: Number;
-    canUpdate: Number;
-  };
+  conversation: Conversation;
   userCurrent: UserProfile | null;
   onMessageChange: () => void;
+  onConversationUpdateInfo: (updatedConversation: Conversation) => void;
 }
 
 interface ConversationMembers {

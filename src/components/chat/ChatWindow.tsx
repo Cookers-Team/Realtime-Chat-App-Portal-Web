@@ -23,13 +23,18 @@ import { AlertDialog, AlertErrorDialog, LoadingDialog } from "../Dialog";
 import { encrypt, decrypt } from "../../types/utils";
 import { remoteUrl } from "../../types/constant";
 import MessageSearch from "./MessageSearch";
+import EditProfileDialog from "./EditProfilePopup";
+import EditProfilePopup from "./EditProfilePopup";
 
 const ChatWindow: React.FC<ChatWindowProps> = ({
   conversation,
   userCurrent,
   onMessageChange,
+  onConversationUpdateInfo,
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoadingUpdate, setLoadingUpdate] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editedMessage, setEditedMessage] = useState("");
@@ -61,6 +66,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const [hasMore, setHasMore] = useState(true);
   const size = 20;
   const [isScrollToBottom, setIsScrollToBottom] = useState(false);
+  const [updatedGroupName, setUpdatedGroupName] = useState(conversation.name);
+  const [avatar, setAvatar] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const handleNewMessage = useCallback(
     async (messageId: string) => {
@@ -362,6 +371,25 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   console.log("Test Owner:", isOwner);
   console.log("Test permission:", isCanUpdate, isCanMessage, isCanAddMember);
 
+  const handleUpdate = async (formData: any) => {
+    setLoadingUpdate(true);
+    setError(null);
+    try {
+      console.log("Data to send", formData);
+      const response = await put("/v1/conversation/update", formData);
+      if (!response.result) {
+        setError(response.message);
+        return;
+      }
+      setIsEditDialogOpen(false);
+      onMessageChange();
+      onConversationUpdateInfo(conversation);
+    } catch (error: any) {
+      setError(error.message);
+    } finally {
+      setLoadingUpdate(false);
+    }
+  };
   return (
     <div className="flex flex-col h-full bg-gray-100">
       <div className="bg-white p-4 border-b shadow-sm flex items-center justify-between">
@@ -372,7 +400,23 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             className="rounded-full w-12 h-12 object-cover border-4 border-blue-100 shadow-lg"
           />
           <div>
-            <h2 className="text-xl font-semibold">{conversation.name}</h2>
+            {(conversation.kind !== 1 || isCanUpdate === 1) && (
+              <div className="flex items-center space-x-2 group">
+                <h2 className="text-xl font-semibold mr-2">
+                  {conversation.name}
+                </h2>
+
+                <button
+                  onClick={() => setIsEditDialogOpen(true)}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Edit
+                    size={18}
+                    className="text-gray-600 hover:text-gray-900"
+                  />
+                </button>
+              </div>
+            )}
             {conversation.totalMembers > 1 && (
               <p className="text-sm text-gray-500">
                 {conversation.totalMembers} thành viên
@@ -380,6 +424,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             )}
           </div>
         </div>
+
         <div className="ml-auto flex items-center space-x-2">
           <MessageSearch
             conversation={conversation}
@@ -479,6 +524,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                   : "justify-start"
               }`}
             >
+              {message.user._id !== userCurrent?._id && (
+                <div className="flex-shrink-0 mr-3">
+                  <img
+                    src={message.user.avatarUrl || UserIcon}
+                    alt={message.user.displayName}
+                    className="w-8 h-8 rounded-full border-4 border-blue-100 shadow-lg"
+                  />
+                </div>
+              )}
+
               <div className="relative">
                 <div
                   className={`p-3 rounded-lg max-w-xs break-all ${
@@ -531,7 +586,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                       <Heart
                         size={14}
                         className={
-                          message.isReacted == 1
+                          message.isReacted === 1
                             ? "text-red-500"
                             : "text-gray-500"
                         }
@@ -753,6 +808,23 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           setIsAlertErrorDialogOpen(false);
         }}
       />
+
+      <EditProfilePopup
+        conversation={conversation}
+        onUpdate={handleUpdate}
+        isVisible={isEditDialogOpen}
+        onClose={() => setIsEditDialogOpen(false)}
+      />
+
+      <LoadingDialog isVisible={isLoadingUpdate} />
+
+      {error &&
+        AlertErrorDialog({
+          isVisible: true,
+          title: "Thất bại",
+          message: error,
+          onAccept: () => setError(null),
+        })}
     </div>
   );
 };

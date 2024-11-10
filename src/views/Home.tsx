@@ -35,6 +35,19 @@ const Home = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  const handleConversationUpdate = useCallback(
+    async (updatedConversation: Conversation) => {
+      console.log("Conversation updated in Home:", updatedConversation);
+      const response = await get(
+        `/v1/conversation/get/${updatedConversation._id}`
+      );
+      const updatedConversationObject = response.data;
+      console.log("Updated conversation object:", updatedConversationObject);
+      setSelectedConversation(updatedConversationObject);
+    },
+    []
+  );
+
   const fetchUserCurrent = useCallback(async () => {
     try {
       const response = await get("/v1/user/profile");
@@ -179,6 +192,7 @@ const Home = () => {
               conversation={selectedConversation}
               userCurrent={userCurrent}
               onMessageChange={handleMessageChange}
+              onConversationUpdateInfo={handleConversationUpdate}
             />
           ) : (
             <div className="flex flex-col items-center justify-center h-full space-y-4 bg-gray-100 p-6 rounded-lg shadow-lg">
