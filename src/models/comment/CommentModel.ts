@@ -1,9 +1,9 @@
 import { PostModel } from "../post/PostModel"
 import { Profile } from "../profile/Profile";
 
-export type CommentModel = {
+export interface CommentModel {
   _id: string
-  post: PostModel
+  post: PostModel 
   user: Profile
   content: string | null
   imageUrl: string
@@ -14,4 +14,7 @@ export type CommentModel = {
   isChildren: number
   totalChildren: number
   totalReactions: number
+  parent?: {
+    _id: string
+  } | null
 }
