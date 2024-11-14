@@ -17,14 +17,17 @@ import {
   UserPlus,
   Settings,
   Heart,
+  ImageIcon,
+  XIcon,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { AlertDialog, AlertErrorDialog, LoadingDialog } from "../Dialog";
-import { encrypt, decrypt } from "../../types/utils";
+import { encrypt, decrypt, uploadImage } from "../../types/utils";
 import { remoteUrl } from "../../types/constant";
 import MessageSearch from "./MessageSearch";
 import EditProfileDialog from "./EditProfilePopup";
 import EditProfilePopup from "./EditProfilePopup";
+import { set } from "react-datepicker/dist/date_utils";
 
 const ChatWindow: React.FC<ChatWindowProps> = ({
   conversation,
@@ -38,6 +41,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const [newMessage, setNewMessage] = useState("");
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editedMessage, setEditedMessage] = useState("");
+  const [editedImageUrl, setEditedImageUrl] = useState("");
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const [friends, setFriends] = useState<Friends[]>([]);
@@ -70,6 +74,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const [avatar, setAvatar] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
 
   const handleNewMessage = useCallback(
     async (messageId: string) => {
@@ -236,8 +241,17 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 
   const handleSendMessage = async (e: any) => {
     e.preventDefault();
-    if (!newMessage.trim()) return;
+    if (!newMessage && !selectedImage) return;
     setIsSendingMessage(true);
+
+    let imageUrl: string | null = null;
+
+    if (selectedImage) {
+      imageUrl = await uploadImage(selectedImage, post);
+    }
+
+    console.log("Image URL:", imageUrl);
+
     try {
       const encryptedMessage = encrypt(
         newMessage.trim(),
@@ -246,8 +260,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       await post("/v1/message/create", {
         conversation: conversation._id,
         content: encryptedMessage,
+        imageUrl: imageUrl,
       });
+
       setNewMessage("");
+      removeSelectedImage();
     } catch (error) {
       console.error("Error creating message:", error);
     } finally {
@@ -273,9 +290,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       await put("/v1/message/update", {
         id: messageId,
         content: encryptedMessage,
+        imageUrl: editedImageUrl,
       });
       setEditingMessageId(null);
       setEditedMessage("");
+      setEditedImageUrl("");
     } catch (error) {
       console.error("Error updating message:", error);
       toast.error("Có lỗi xảy ra khi cập nhật tin nhắn");
@@ -390,6 +409,28 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       setLoadingUpdate(false);
     }
   };
+
+  // Send image message
+  const pickImage = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleImageSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+    }
+  };
+
+  const removeSelectedImage = () => {
+    setSelectedImage(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-gray-100">
       <div className="bg-white p-4 border-b shadow-sm flex items-center justify-between">
@@ -549,33 +590,77 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                   )}
 
                   {editingMessageId === message._id ? (
-                    <div className="flex items-center">
-                      <input
-                        type="text"
-                        value={editedMessage}
-                        onChange={(e) => setEditedMessage(e.target.value)}
-                        className="w-full text-black p-2 border rounded-md"
-                      />
-                      <button
-                        onClick={() => setEditingMessageId(null)}
-                        className="ml-2 p-2 text-red-600 hover:text-red-800 transition-colors"
-                      >
-                        <X size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleUpdateMessage(message._id)}
-                        className="px-2 py-1 bg-green-500 text-white rounded-md"
-                      >
-                        <Check size={16} />
-                      </button>
+                    <div className="flex flex-col items-start gap-2">
+                      <div className="flex w-full gap-2">
+                        {/* Input chỉnh sửa tin nhắn */}
+                        <input
+                          type="text"
+                          value={editedMessage}
+                          onChange={(e) => setEditedMessage(e.target.value)}
+                          className="flex-grow text-black p-2 border rounded-md"
+                        />
+
+                        {/* Nút hủy chỉnh sửa */}
+                        <button
+                          onClick={() => setEditingMessageId(null)}
+                          className="p-2 text-red-600 hover:text-red-800 transition-colors"
+                        >
+                          <X size={16} />
+                        </button>
+
+                        {/* Nút xác nhận chỉnh sửa */}
+                        <button
+                          onClick={() => handleUpdateMessage(message._id)}
+                          className="px-2 py-1 bg-green-500 text-white rounded-md"
+                        >
+                          <Check size={16} />
+                        </button>
+                      </div>
+
+                      {/* Hiển thị ảnh đã chọn nếu có */}
+                      {editedImageUrl && (
+                        <div className="w-full mt-2">
+                          <img
+                            src={editedImageUrl}
+                            alt="Message attachment"
+                            className="max-w-full max-h-40 rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={() =>
+                              window.open(editedImageUrl, "_blank")
+                            }
+                          />
+                        </div>
+                      )}
                     </div>
                   ) : (
-                    <p className="mt-1">
-                      {message.content
-                        ? decrypt(message.content, userCurrent?.secretKey)
-                        : "Không thể hiển thị tin nhắn"}
-                    </p>
+                    <>
+                      {/* Hiển thị nội dung tin nhắn nếu có */}
+                      {message.content && (
+                        <p className="mt-1">
+                          {decrypt(message.content, userCurrent?.secretKey)}
+                        </p>
+                      )}
+
+                      {/* Hiển thị hình ảnh nếu có */}
+                      {message.imageUrl && (
+                        <div className={`${message.content ? "mt-2" : "mt-0"}`}>
+                          <img
+                            src={message.imageUrl}
+                            alt="Message attachment"
+                            className="max-w-full max-h-64 rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={() =>
+                              window.open(message.imageUrl, "_blank")
+                            }
+                          />
+                        </div>
+                      )}
+
+                      {/* Hiển thị thông báo khi không có cả nội dung và hình ảnh */}
+                      {!message.content && !message.imageUrl && (
+                        <p className="mt-1">Không thể hiển thị tin nhắn</p>
+                      )}
+                    </>
                   )}
+
                   <p className="text-xs mt-1 opacity-70">{message.createdAt}</p>
 
                   <div className="absolute -bottom-2 -right-2">
@@ -599,6 +684,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                     </button>
                   </div>
                 </div>
+
                 {message.user._id === userCurrent?._id && (
                   <div className="absolute top-0 right-0 -mt-1 -mr-1">
                     <button
@@ -615,6 +701,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                             setEditedMessage(
                               decrypt(message.content, userCurrent.secretKey)
                             );
+                            setEditedImageUrl(message.imageUrl);
                             setActiveDropdown(null);
                           }}
                           className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -643,21 +730,54 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 
       {isCanMessage === 1 || isOwner || conversation.kind == 2 ? (
         <form onSubmit={handleSendMessage} className="p-4 bg-white border-t">
-          <div className="flex items-center">
-            <input
-              type="text"
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Nhập tin nhắn tại đây..."
-              className="flex-grow p-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-500 text-white rounded-r-md hover:bg-blue-600 transition-colors"
-              disabled={isSendingMessage}
-            >
-              {isSendingMessage ? "Sending..." : "Gửi"}
-            </button>
+          <div className="relative">
+            {selectedImage && (
+              <div className="mb-2 relative inline-block">
+                <img
+                  src={URL.createObjectURL(selectedImage)}
+                  alt="Preview"
+                  className="max-h-32 rounded-lg"
+                />
+                <button
+                  type="button"
+                  onClick={removeSelectedImage}
+                  className="absolute -top-2 -right-2 p-1 bg-red-500 rounded-full text-white hover:bg-red-600"
+                >
+                  <XIcon size={14} />
+                </button>
+              </div>
+            )}
+            <div className="flex items-center">
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Nhập tin nhắn tại đây..."
+                className="flex-grow p-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageSelected}
+                accept="image/*"
+                className="hidden"
+                id="image-upload"
+              />
+              <label
+                htmlFor="image-upload"
+                className="px-4 py-2 bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-pointer border-y border-r"
+              >
+                <ImageIcon size={20} />
+              </label>
+
+              <button
+                type="submit"
+                className="px-4 py-2 bg-blue-500 text-white rounded-r-md hover:bg-blue-600 transition-colors"
+                disabled={isSendingMessage}
+              >
+                {isSendingMessage ? "Sending..." : "Gửi"}
+              </button>
+            </div>
           </div>
         </form>
       ) : (
