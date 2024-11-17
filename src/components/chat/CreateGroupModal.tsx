@@ -4,7 +4,9 @@ import useFetch from "../../hooks/useFetch";
 import { Friends } from "../../types/chat";
 import { AlertDialog, AlertErrorDialog } from "../Dialog";
 import useDialog from "../../hooks/useDialog";
-import { set } from "react-datepicker/dist/date_utils";
+import { uploadImage } from "../../types/utils";
+import { Edit } from "lucide-react";
+import UserIcon from "../../assets/user_icon.png";
 
 interface CreateGroupModalProps {
   onClose: () => void;
@@ -26,6 +28,16 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
   const [isSuccessDialogVisible, setSuccessDialogVisible] = useState(false);
   const { get, post } = useFetch();
   const [searchFriendQuery, setSearchFriendQuery] = useState("");
+  const [avatar, setAvatar] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAvatar(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
 
   const filteredFriends = friendsList.filter((friend) =>
     friend.friend.displayName
@@ -79,9 +91,16 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
 
     try {
       setLoading(true);
+
+      let avatarUrl = null;
+      if (avatar) {
+        avatarUrl = await uploadImage(avatar, post);
+      }
+
       const payload = {
         name: groupName,
         conversationMembers: selectedMembers,
+        avatarUrl: avatarUrl,
       };
 
       const response = await post("/v1/conversation/create", payload);
@@ -124,6 +143,29 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
           value={groupName}
           onChange={(e) => setGroupName(e.target.value)}
         />
+
+        <div className="flex flex-col items-center gap-4 mb-4">
+          <div className="relative w-24 h-24">
+            <img
+              src={previewUrl ? previewUrl : UserIcon}
+              alt="Avatar preview"
+              className="w-full h-full rounded-full object-cover"
+            />
+            <label
+              htmlFor="avatar-input"
+              className="absolute bottom-0 right-0 p-1 bg-white rounded-full cursor-pointer shadow-lg hover:bg-gray-100"
+            >
+              <Edit size={16} />
+              <input
+                id="avatar-input"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarChange}
+              />
+            </label>
+          </div>
+        </div>
 
         <div className="mb-4">
           <h3 className="font-semibold mb-2">Chọn thành viên</h3>
