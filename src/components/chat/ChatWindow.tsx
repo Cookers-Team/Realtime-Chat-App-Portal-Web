@@ -21,19 +21,26 @@ import {
   XIcon,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { AlertDialog, AlertErrorDialog, LoadingDialog } from "../Dialog";
+import {
+  AlertDialog,
+  AlertErrorDialog,
+  ConfimationDialog,
+  LoadingDialog,
+} from "../Dialog";
 import { encrypt, decrypt, uploadImage } from "../../types/utils";
 import { remoteUrl } from "../../types/constant";
 import MessageSearch from "./MessageSearch";
 import EditProfileDialog from "./EditProfilePopup";
 import EditProfilePopup from "./EditProfilePopup";
 import { set } from "react-datepicker/dist/date_utils";
+import { useNavigate } from "react-router-dom";
 
 const ChatWindow: React.FC<ChatWindowProps> = ({
   conversation,
   userCurrent,
   onMessageChange,
   onConversationUpdateInfo,
+  handleConversationDeleted,
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoadingUpdate, setLoadingUpdate] = useState<boolean>(false);
@@ -45,7 +52,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const [friends, setFriends] = useState<Friends[]>([]);
-  const [selectedFriends, setSelectedFriends] = useState<string | null>(null);
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const { get, post, del, put, loading } = useFetch();
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
   const scrollContainerRef = useRef<null | HTMLDivElement>(null);
@@ -75,6 +82,48 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+
+  // Hàm xử lý giải tán nhóm
+  const handleDisbandGroup = async () => {
+    setLoadingUpdate(true);
+    try {
+      await deleteConversation(conversation._id);
+      handleConversationDeleted();
+      setIsManageMembersModalOpen(false);
+      onConversationUpdateInfo(conversation);
+    } catch (error) {
+      console.error("Lỗi khi giải tán nhóm:", error);
+      alert("Đã xảy ra lỗi khi giải tán nhóm. Vui lòng thử lại sau.");
+    } finally {
+      setLoadingUpdate(false);
+    }
+  };
+
+  const deleteConversation = async (conversationId: any) => {
+    try {
+      const response = await del(`/v1/conversation/delete/${conversationId}`);
+      if (response.result) {
+        console.log("Xóa nhóm thành công:", response);
+      }
+    } catch (error) {
+      setErrorMessage("Có lỗi xảy ra khi giải tán nhóm.");
+    }
+  };
+
+  const filteredFriends = friends.filter((friend) =>
+    friend.friend.displayName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const toggleMember = (userId: string) => {
+    setSelectedMembers((prevMembers) =>
+      prevMembers.includes(userId)
+        ? prevMembers.filter((id) => id !== userId)
+        : [...prevMembers, userId]
+    );
+  };
 
   const handleNewMessage = useCallback(
     async (messageId: string) => {
@@ -332,12 +381,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   };
 
   const handleAddMember = async () => {
-    console.log("Selected friends:", selectedFriends);
-    console.log("Conversation:", conversation._id);
+    // console.log("Selected friends:",);
+    // console.log("Conversation:", conversation._id);
     try {
       const response = await post("/v1/conversation-member/add", {
         conversation: conversation._id,
-        user: selectedFriends,
+        users: selectedMembers,
       });
       console.log("Response add member:", response.result);
       if (!response.result) {
@@ -351,7 +400,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       }
       setIsAddMemberModalOpen(false);
       setIsAlertDialogOpen(true);
-      setSelectedFriends(null);
+      setSelectedMembers([]);
+      onConversationUpdateInfo(conversation);
     } catch (error) {
       setErrorMessage("Có lỗi xảy ra khi thêm thành viên.");
       setIsAlertErrorDialogOpen(true);
@@ -441,12 +491,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             className="rounded-full w-12 h-12 object-cover border-4 border-blue-100 shadow-lg"
           />
           <div>
-            {(conversation.kind !== 1 || isCanUpdate === 1) && (
-              <div className="flex items-center space-x-2 group">
-                <h2 className="text-xl font-semibold mr-2">
-                  {conversation.name}
-                </h2>
-
+            <div className="flex items-center space-x-2 group">
+              <h2 className="text-xl font-semibold mr-2">
+                {conversation.name}
+              </h2>
+              {conversation.kind === 1 && isCanUpdate === 1 && (
                 <button
                   onClick={() => setIsEditDialogOpen(true)}
                   className="opacity-0 group-hover:opacity-100 transition-opacity"
@@ -456,8 +505,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                     className="text-gray-600 hover:text-gray-900"
                   />
                 </button>
-              </div>
-            )}
+              )}
+            </div>
             {conversation.totalMembers > 1 && (
               <p className="text-sm text-gray-500">
                 {conversation.totalMembers} thành viên
@@ -791,46 +840,57 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 w-96">
             <h3 className="text-xl font-semibold mb-4">Thêm thành viên</h3>
+
+            {/* Thanh tìm kiếm bạn bè */}
+            <input
+              type="text"
+              placeholder="Tìm kiếm bạn bè..."
+              className="w-full p-2 mb-4 border rounded focus:outline-none"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+
             <div className="max-h-60 overflow-y-auto">
-              {friends.map((friend) => {
-                const isAlreadyInConversation =
-                  conversationMembersIdList.includes(friend.friend._id);
+              {filteredFriends.length > 0 ? (
+                filteredFriends.map((friend) => {
+                  const isAlreadyInConversation =
+                    conversationMembersIdList.includes(friend.friend._id);
 
-                return (
-                  <div
-                    key={friend._id}
-                    className="flex items-center justify-between mb-2"
-                  >
-                    <div className="flex items-center">
-                      <input
-                        type="radio"
-                        id={friend._id}
-                        name="selectedFriend"
-                        checked={isAlreadyInConversation}
-                        onChange={() =>
-                          !isAlreadyInConversation &&
-                          setSelectedFriends(friend.friend._id)
-                        }
-                        className="mr-2"
-                        disabled={isAlreadyInConversation}
-                      />
-                      <label
-                        htmlFor={friend._id}
-                        className={
-                          isAlreadyInConversation ? "text-gray-500" : ""
-                        }
-                      >
-                        {friend.friend.displayName}
-                      </label>
+                  return (
+                    <div
+                      key={friend._id}
+                      className="flex items-center justify-between mb-2"
+                    >
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id={friend._id}
+                          checked={selectedMembers.includes(friend.friend._id)}
+                          onChange={() => toggleMember(friend.friend._id)}
+                          className="mr-2"
+                          disabled={isAlreadyInConversation}
+                        />
+                        <label
+                          htmlFor={friend._id}
+                          className={
+                            isAlreadyInConversation ? "text-gray-500" : ""
+                          }
+                        >
+                          {friend.friend.displayName}
+                        </label>
+                      </div>
+
+                      {isAlreadyInConversation && (
+                        <p className="text-gray-500 ml-auto">Đã tham gia</p>
+                      )}
                     </div>
-
-                    {isAlreadyInConversation && (
-                      <p className="text-gray-500 ml-auto">Đã tham gia</p>
-                    )}
-                  </div>
-                );
-              })}
+                  );
+                })
+              ) : (
+                <p className="text-gray-500">Không tìm thấy bạn bè nào</p>
+              )}
             </div>
+
             <div className="mt-4 flex justify-end space-x-2">
               <button
                 onClick={() => setIsAddMemberModalOpen(false)}
@@ -848,12 +908,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           </div>
         </div>
       )}
+
       {isManageMembersModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 w-96">
             <h3 className="text-xl font-semibold mb-4">
               Cho phép các thành viên trong nhóm:
             </h3>
+
             <div className="flex items-center mb-4">
               <input
                 type="checkbox"
@@ -869,6 +931,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                 Có thể cập nhật tên và avatar của nhóm
               </label>
             </div>
+
             <div className="flex items-center mb-4">
               <input
                 type="checkbox"
@@ -884,6 +947,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                 Có thể nhắn tin trong nhóm
               </label>
             </div>
+
             <div className="flex items-center mb-4">
               <input
                 type="checkbox"
@@ -899,9 +963,19 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                 Có thể thêm thành viên vào nhóm
               </label>
             </div>
-            <div className="mt-4 flex justify-end">
+
+            {/* Nút Giải tán nhóm */}
+            <div className="mt-4 flex justify-between">
               <button
-                onClick={() => setIsManageMembersModalOpen(false)}
+                onClick={() => setIsConfirmDialogOpen(true)}
+                className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+              >
+                Giải tán nhóm
+              </button>
+              <button
+                onClick={() => {
+                  setIsManageMembersModalOpen(false);
+                }}
                 className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 transition-colors"
               >
                 Đóng
@@ -927,6 +1001,18 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         onAccept={() => {
           setIsAlertErrorDialogOpen(false);
         }}
+      />
+
+      <ConfimationDialog
+        isVisible={isConfirmDialogOpen}
+        title="Xác nhận"
+        color="red"
+        message="Bạn có chắc chắn muốn giải tán nhóm?"
+        onConfirm={() => {
+          handleDisbandGroup();
+          setIsConfirmDialogOpen(false);
+        }}
+        onCancel={() => setIsConfirmDialogOpen(false)}
       />
 
       <EditProfilePopup
