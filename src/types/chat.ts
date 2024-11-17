@@ -48,6 +48,7 @@ interface ChatWindowProps {
   userCurrent: UserProfile | null;
   onMessageChange: () => void;
   onConversationUpdateInfo: (updatedConversation: Conversation) => void;
+  handleConversationDeleted: () => void;
 }
 
 interface ConversationMembers {

@@ -61,14 +61,17 @@ const Home = () => {
   const fetchConversations = useCallback(async () => {
     // if (selectedSection !== "messages" || !userCurrent) return;
     try {
-      const response = await get("/v1/conversation/list");
+      const response = await get("/v1/conversation/list", {
+        isPaged: 0,
+      });
       const conversations = response.data.content;
       console.log("Fetching conversations...", conversations);
-      const filteredConversations = conversations.filter(
-        (conversation: Conversation) =>
-          conversation.lastMessage || conversation.kind === 1
-      );
-      setConversations(filteredConversations);
+      // const filteredConversations = conversations.filter(
+      //   (conversation: Conversation) =>
+      //     conversation.lastMessage || conversation.kind === 1
+      // );
+      // setConversations(filteredConversations);
+      setConversations(conversations);
     } catch (error) {
       console.error("Error fetching conversations:", error);
     }
@@ -170,6 +173,7 @@ const Home = () => {
               setIsSidebarOpen(false);
             }}
             userCurrent={userCurrent}
+            handleConversationCreated={handleMessageChange}
           />
         ) : selectedSection === "friends" ? (
           <FriendListItem
@@ -193,6 +197,7 @@ const Home = () => {
               userCurrent={userCurrent}
               onMessageChange={handleMessageChange}
               onConversationUpdateInfo={handleConversationUpdate}
+              handleConversationDeleted={handleMessageChange}
             />
           ) : (
             <div className="flex flex-col items-center justify-center h-full space-y-4 bg-gray-100 p-6 rounded-lg shadow-lg">
