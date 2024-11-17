@@ -62,7 +62,7 @@ const ConfimationDialog = ({
       title={title}
       message={message}
       color={color}
-      onClose={onCancel}
+      onCancel={onCancel}
     >
       <div className="flex gap-2 w-full">
         <button

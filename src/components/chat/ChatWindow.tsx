@@ -68,9 +68,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const [conversationMembersIdList, setConversationMembersIdList] = useState<
     string[]
   >([]);
-  const [isConversationMembers, setIsConversationMembers] = useState<
-    ConversationMembers[]
-  >([]);
   const [isManageMembersModalOpen, setIsManageMembersModalOpen] =
     useState(false);
   const [page, setPage] = useState(0);
@@ -82,11 +79,58 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  // add member
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  // delete member
+  const [isMemberListOpen, setIsMemberListOpen] = useState(false);
+  const [membersList, setMembersList] = useState<ConversationMembers[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [isConfirmDelMemDialogOpen, setIsConfirmDelMemDialogOpen] =
+    useState(false);
+  const [memberIdSelected, setMemberIdSelected] = useState<string | null>(null);
 
-  // Hàm xử lý giải tán nhóm
+  // Get member list
+  const handleOpenMemberList = async () => {
+    setLoadingMembers(true);
+    setIsMemberListOpen(true);
+    try {
+      const response = await get(`/v1/conversation-member/list`, {
+        conversation: conversation._id,
+      });
+      if (response.result) {
+        setMembersList(response.data.content);
+      }
+    } catch (error) {
+      console.error("Lỗi khi lấy danh sách thành viên:", error);
+    } finally {
+      setLoadingMembers(false);
+    }
+  };
+
+  // Delete member
+  const handleRemoveMember = async (memberId: string | null) => {
+    setLoadingUpdate(true);
+    try {
+      const response = await del(`/v1/conversation-member/remove/${memberId}`);
+      if (response.result) {
+        setMembersList((prev) =>
+          prev.filter((member) => member._id !== memberId)
+        );
+        onConversationUpdateInfo(conversation);
+      } else {
+        alert("Xóa thành viên thất bại.");
+      }
+    } catch (error) {
+      console.error("Lỗi khi xóa thành viên:", error);
+      alert("Đã xảy ra lỗi khi xóa thành viên.");
+    } finally {
+      setLoadingUpdate(false);
+    }
+  };
+
+  // Disband group
   const handleDisbandGroup = async () => {
     setLoadingUpdate(true);
     try {
@@ -242,15 +286,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         }
         setHasMore(newMessages.length === size);
         setPage(pageNumber);
-
-        const membersResponse = await get(`/v1/conversation-member/list`, {
-          conversation: conversation._id,
-        });
-
-        setIsConversationMembers(membersResponse.data.content);
-        setConversationMembersIdList(
-          membersResponse.data.content.map((member: any) => member.user._id)
-        );
       } catch (error) {
         console.error("Error fetching messages:", error);
       } finally {
@@ -375,6 +410,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       });
       console.log("List ban be:", response.data.content);
       setFriends(response.data.content);
+
+      const membersResponse = await get(`/v1/conversation-member/list`, {
+        conversation: conversation._id,
+      });
+      setConversationMembersIdList(
+        membersResponse.data.content.map((member: any) => member.user._id)
+      );
     } catch (error) {
       console.error("Error fetching friends:", error);
     }
@@ -383,6 +425,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const handleAddMember = async () => {
     // console.log("Selected friends:",);
     // console.log("Conversation:", conversation._id);
+    setLoadingUpdate(true);
     try {
       const response = await post("/v1/conversation-member/add", {
         conversation: conversation._id,
@@ -406,6 +449,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       setErrorMessage("Có lỗi xảy ra khi thêm thành viên.");
       setIsAlertErrorDialogOpen(true);
       console.error("Error adding members:", error);
+    } finally {
+      setLoadingUpdate(false);
     }
   };
 
@@ -508,7 +553,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               )}
             </div>
             {conversation.totalMembers > 1 && (
-              <p className="text-sm text-gray-500">
+              <p
+                className="text-sm text-gray-500 cursor-pointer hover:underline"
+                onClick={handleOpenMemberList}
+              >
                 {conversation.totalMembers} thành viên
               </p>
             )}
@@ -562,8 +610,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             <button
               onClick={() => {
                 if (isCanAddMember === 1 || isOwner === 1) {
-                  setIsAddMemberModalOpen(true);
                   fetchFriends();
+                  setIsAddMemberModalOpen(true);
                 } else {
                   toast.error(
                     "Bạn không có quyền thêm thành viên vào cuộc trò chuyện này!"
@@ -841,7 +889,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           <div className="bg-white rounded-lg p-6 w-96">
             <h3 className="text-xl font-semibold mb-4">Thêm thành viên</h3>
 
-            {/* Thanh tìm kiếm bạn bè */}
             <input
               type="text"
               placeholder="Tìm kiếm bạn bè..."
@@ -985,6 +1032,59 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         </div>
       )}
 
+      {isMemberListOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-6 w-96 max-h-96 overflow-y-auto">
+            <h3 className="text-xl font-semibold mb-4">Danh sách thành viên</h3>
+            {loadingMembers ? (
+              <p>Đang tải danh sách...</p>
+            ) : (
+              <div className="space-y-4">
+                {membersList.map((member) => (
+                  <div
+                    key={member._id}
+                    className="flex items-center justify-between"
+                  >
+                    <div className="flex items-center">
+                      <img
+                        src={member.user.avatarUrl || UserIcon}
+                        alt={member.user.displayName}
+                        className="w-8 h-8 rounded-full mr-2"
+                      />
+                      <span className="text-gray-700">
+                        {member.user.displayName}
+                      </span>
+                    </div>
+
+                    {member.isOwner === 1 ? (
+                      <span className="text-sm text-blue-500">Nhóm trưởng</span>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setIsConfirmDelMemDialogOpen(true);
+                          setMemberIdSelected(member._id);
+                        }}
+                        className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                      >
+                        Xóa
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={() => setIsMemberListOpen(false)}
+                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <AlertDialog
         isVisible={isAlertDialogOpen}
         title="Thành công"
@@ -1001,6 +1101,18 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         onAccept={() => {
           setIsAlertErrorDialogOpen(false);
         }}
+      />
+
+      <ConfimationDialog
+        isVisible={isConfirmDelMemDialogOpen}
+        title="Xác nhận"
+        color="red"
+        message="Bạn có chắc chắn muốn xoá thành viên này ra khỏi nhóm?"
+        onConfirm={() => {
+          handleRemoveMember(memberIdSelected);
+          setIsConfirmDelMemDialogOpen(false);
+        }}
+        onCancel={() => setIsConfirmDelMemDialogOpen(false)}
       />
 
       <ConfimationDialog
