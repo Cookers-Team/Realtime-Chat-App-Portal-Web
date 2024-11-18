@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MoreVertical, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MoreVertical, ChevronLeft, ChevronRight,ThumbsUp, MoreHorizontal, MessageCircle,Share2  } from 'lucide-react';
 import { PostModel } from '../../models/post/PostModel';
 import PostDetail from './PostDetail';
 
@@ -79,61 +79,73 @@ const PostItem: React.FC<PostItemProps> = ({
   };
 
   return (
-    <>
-      <div className="bg-white p-4 mb-4 shadow rounded-lg max-w-2xl mx-auto border-gray-300 border relative">
-        <div className="flex items-center mb-2">
-          <img
-            src={user.avatarUrl || '/default-avatar.png'}
-            alt={user.displayName}
-            className="w-10 h-10 rounded-full mr-2"
-          />
-          <div className="flex-grow">
-            <p className="font-semibold">{user.displayName}</p>
-            <p className="text-sm text-gray-500">{createdAt}</p>
+    <div className="bg-white rounded-lg shadow mb-4">
+      {/* Header */}
+      <div className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <img
+              src={user.avatarUrl || '/default-avatar.png'}
+              alt={user.displayName}
+              className="w-10 h-10 rounded-full"
+            />
+            <div>
+              <p className="font-semibold text-sm">{user.displayName}</p>
+              <div className="flex items-center space-x-2 text-gray-500 text-sm">
+                <span>{createdAt}</span>
+                {isPost === 1 && (
+                  <span>• {getStatusLabel(status)}</span>
+                )}
+              </div>
+            </div>
           </div>
-          
+
           {isPost === 1 && isOwner === 1 && (
             <div className="menu-container relative">
-              <p className="mr-2 text-sm font-medium text-gray-700">{getStatusLabel(status)}</p>
               <button 
                 onClick={toggleMenu}
-                className="p-1 hover:bg-gray-100 rounded-full"
+                className="p-2 hover:bg-gray-100 rounded-full"
               >
-                <MoreVertical size={20} />
+                <MoreHorizontal size={20} className="text-gray-600" />
               </button>
               
               {showMenu && (
-                <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
-                  <div className="py-1">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEdit();
-                        setShowMenu(false);
-                      }}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray -100"
-                    >
-                      Chỉnh sửa
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDelete();
-                        setShowModal(false);
-                      }}
-                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                    >
-                      Xóa
-                    </button>
-                  </div>
+                <div className="absolute right-0 mt-2 w-48 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit();
+                      setShowMenu(false);
+                    }}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    Chỉnh sửa bài viết
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete();
+                      setShowMenu(false);
+                    }}
+                    className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50"
+                  >
+                    Xóa bài viết
+                  </button>
                 </div>
               )}
             </div>
           )}
         </div>
 
+        {/* Content */}
         <button onClick={handleShowModal} className="block w-full text-left">
-          <p className="mb-2">{content}</p>
+        <div className="mt-3">
+          <p className="text-sm">{content}</p>
+        </div>
+        </button>
+      </div>
+
+      <div onClick={handleShowModal} className="block w-full text-left">
           {imageUrls.length > 0 && (
             <div className="relative">
               {/* Image Container */}
@@ -189,11 +201,37 @@ const PostItem: React.FC<PostItemProps> = ({
               )}
             </div>
           )}
-        </button>
+        </div>
+      {/* Engagement stats */}
+      <div className="px-4 py-2">
+        <div className="flex items-center justify-between text-sm text-gray-500">
+          <div className="flex items-center space-x-1">
+            <div className="bg-blue-500 rounded-full p-1">
+              <ThumbsUp size={12} className="text-white" />
+            </div>
+            <span>{totalReactions}</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <span>{totalComments} bình luận</span>
+          </div>
+        </div>
+      </div>
 
-        <div className="flex items-center text-sm text-gray-500 mt-4">
-          <p className="mr-4">❤️ {totalReactions}</p>
-          <p>💬 {totalComments}</p>
+      {/* Action buttons */}
+      <div className="border-t border-gray-200">
+        <div className="flex items-center justify-between px-4 py-2">
+          <button className="flex items-center justify-center space-x-2 py-2 px-4 hover:bg-gray-100 rounded-lg flex-1">
+            <ThumbsUp size={20} className="text-gray-600" />
+            <span className="text-sm text-gray-600">Thích</span>
+          </button>
+          <button className="flex items-center justify-center space-x-2 py-2 px-4 hover:bg-gray-100 rounded-lg flex-1">
+            <MessageCircle size={20} className="text-gray-600" />
+            <span className="text-sm text-gray-600">Bình luận</span>
+          </button>
+          <button className="flex items-center justify-center space-x-2 py-2 px-4 hover:bg-gray-100 rounded-lg flex-1">
+            <Share2 size={20} className="text-gray-600" />
+            <span className="text-sm text-gray-600">Chia sẻ</span>
+          </button>
         </div>
       </div>
 
@@ -202,10 +240,12 @@ const PostItem: React.FC<PostItemProps> = ({
           postId={_id}
           postContent={content}
           imageUrls={imageUrls}
-          onClose={handleCloseModal}
+          totalComments={totalComments} // Pass totalComments here
+          onClose={() => setShowModal(false)}
         />
       )}
-    </>
+
+    </div>
   );
 };
 
