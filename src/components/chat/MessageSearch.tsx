@@ -115,7 +115,7 @@ const MessageSearch = ({
       ) : null}
 
       {isLoading && (
-        <div className="absolute right-0 top-12 w-80 p-4 bg-white rounded-lg shadow-lg text-center">
+        <div className="absolute right-0 z-50 top-12 w-80 p-4 bg-white rounded-lg shadow-lg text-center">
           Đang tìm kiếm...
         </div>
       )}

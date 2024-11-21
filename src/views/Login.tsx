@@ -30,7 +30,8 @@ const Login = () => {
 
     if (field === "username") {
       if (!value.trim()) {
-        newErrors.username = "Username không được bỏ trống";
+        newErrors.username =
+          "Tên đăng nhập không đúng (không được bỏ trống, không hợp lệ)";
       } else {
         newErrors.username = "";
       }
@@ -146,7 +147,7 @@ const Login = () => {
           <div className="text-sm text-right">
             <a
               href="/forgot-password"
-              className="font-medium text-indigo-600 hover:text-indigo-500"
+              className="font-medium text-blue-800 hover:text-indigo-500"
             >
               Quên mật khẩu?
             </a>
@@ -155,7 +156,7 @@ const Login = () => {
           <Button title="Đăng nhập" color="royalblue" onPress={handleSubmit} />
           <p className="mt-4 text-center">
             Bạn chưa có tài khoản?{" "}
-            <a href="/register" className="text-blue-500 hover:underline">
+            <a href="/register" className="text-blue-800 hover:underline">
               Đăng ký ngay
             </a>
           </p>

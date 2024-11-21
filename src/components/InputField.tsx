@@ -45,9 +45,9 @@ const InputField = ({
         {togglePassword && (
           <button onClick={togglePassword} className="ml-2">
             {showPassword ? (
-              <EyeOffIcon size={20} color={error ? "#EF4444" : "#6B7280"} />
-            ) : (
               <EyeIcon size={20} color={error ? "#EF4444" : "#6B7280"} />
+            ) : (
+              <EyeOffIcon size={20} color={error ? "#EF4444" : "#6B7280"} />
             )}
           </button>
         )}
