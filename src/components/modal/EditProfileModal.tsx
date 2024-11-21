@@ -229,12 +229,8 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
       if (showPasswordFields) {
         setIsAlertLoginVisible(true);
-      } else {
-        setIsAlertVisible(true);
       }
-
-      onClose();
-      onOpenProfileModal();
+      setIsAlertVisible(true);
     } catch (error: any) {
       setError(error.message);
     } finally {
@@ -536,7 +532,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 secureTextEntry={true}
               />
               <InputField
-                title="Xác nhận mật khẩu"
+                title="Xác nhận mật khẩu mới"
                 isRequire={true}
                 placeholder="Nhập lại mật khẩu mới"
                 onChangeText={(value: any) =>
