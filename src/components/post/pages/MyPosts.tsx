@@ -1,17 +1,18 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import PostItem from './PostItem';
-import { useLoading } from '../../hooks/useLoading';
-import { remoteUrl } from '../../types/constant';
+import { useLoading } from '../../../hooks/useLoading';
+import { remoteUrl } from '../../../types/constant';
 import { toast } from 'react-toastify';
-import InputField from '../InputField';
+import InputField from '../../InputField';
 import { Search, PlusCircle, Loader2 } from 'lucide-react';
 import { jwtDecode } from 'jwt-decode';
-import Button from '../Button';
-import { LoadingDialog } from '../Dialog';
+import Button from '../../Button';
+import { LoadingDialog } from '../../Dialog';
 import CreatePost from './CreatePost';
-import CreateStory from './CreateStory';
+import CreateStory from '../story/CreateStory';
 import UpdatePost from './UpdatePost';
-import { PostModel } from '../../models/post/PostModel';
+import { PostModel } from '../../../models/post/PostModel';
+import useFetch from '../../../hooks/useFetch';
 
 const MyPosts = () => {
   const [posts, setPosts] = useState<PostModel[]>([]);
@@ -21,13 +22,13 @@ const MyPosts = () => {
   const [createStoryModalVisible, setCreateStoryModalVisible] = useState(false);
   const [updateModalVisible, setUpdateModalVisible] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
-  
-  // New state for pagination
+  const [selectedPost, setSelectedPost] = useState<PostModel | null>(null);
+  const {get} = useFetch();
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const observer = useRef<IntersectionObserver | null>(null);
-  const lastPostElementRef = useRef<HTMLDivElement | null>(null);
+  const itemsPerPage = 10;
 
   const getUserIdFromToken = () => {
     const token = localStorage.getItem('accessToken');
@@ -44,45 +45,32 @@ const MyPosts = () => {
   };
 
   const userId = getUserIdFromToken();
-
-  const fetchMyPosts = async (pageNumber: number, isInitial: boolean = false) => {
-    if (isInitial) {
-      showLoading();
-    } else {
-      setIsLoadingMore(true);
-    }
-
+  
+  const fetchMyPosts = async (pageNumber: number) => {
     try {
-      const response = await fetch(`${remoteUrl}/v1/post/list?page=${pageNumber}&size=5`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-        },
+      const response = await get(`/v1/post/list`, {
+        page: pageNumber,
+        size: itemsPerPage,
+        getListKind: 3,
       });
-      const data = await response.json();
-      if (data.result) {
-        console.log(`Tổng số bài viết từ API: ${data.data.content.length}`);
-        const userPosts = data.data.content.filter((post: any) => post.user._id === userId);
-        if (isInitial) {
-          setPosts(userPosts);
-        } else {
-          setPosts(prevPosts => [...prevPosts, ...userPosts]);
-        }
-        setHasMore(userPosts.length > 0);
+    
+      const data = response.data.content;
+   
+      if (pageNumber === 0) {
+        setPosts(data);
       } else {
-        toast.error('Không thể tải bài viết của bạn.');
+        setPosts((prevPosts) => [...prevPosts, ...data]);
       }
-    } catch (error) {
-      toast.error('Đã xảy ra lỗi khi tải bài viết.');
+  
+      setHasMore(data.length > 0);
+    } catch (error: any) {
+      console.error("Lỗi chi tiết:", error); 
+      
     } finally {
-      if (isInitial) {
-        hideLoading();
-      } else {
-        setIsLoadingMore(false);
-      }
+      setIsLoadingMore(false);
     }
   };
+  
 
   // Intersection Observer setup
   const lastPostRef = useCallback((node: HTMLDivElement) => {
@@ -100,18 +88,17 @@ const MyPosts = () => {
   }, [isLoading, isLoadingMore, hasMore, searchQuery]);
 
   useEffect(() => {
-    if (userId) {
-      fetchMyPosts(0, true);
-    } else {
-      toast.error('Không tìm thấy ID người dùng.');
+  
+      fetchMyPosts(0);
     }
-  }, [userId]);
+  );
 
   useEffect(() => {
     if (page > 0 && hasMore && !searchQuery) {
       fetchMyPosts(page);
     }
   }, [page]);
+
 
   const handleEdit = (postId: string) => {
     setSelectedPostId(postId);
@@ -133,7 +120,7 @@ const MyPosts = () => {
         toast.success('Xóa bài viết thành công');
         // Reset pagination and fetch posts again
         setPage(0);
-        fetchMyPosts(0, true);
+        fetchMyPosts(0);
       } else {
         toast.error(data.message);
       }
@@ -202,10 +189,10 @@ const MyPosts = () => {
               ref={index === filteredPosts.length - 1 ? lastPostRef : null}
             >
               <PostItem
-                {...post}
+                postItem = {post}
                 onEdit={() => handleEdit(post._id)}
                 onDelete={() => handleDelete(post._id)}
-                isPost={1}
+         
               />
             </div>
           ))
@@ -229,7 +216,7 @@ const MyPosts = () => {
         profile={{ displayName: "User", avatarUrl: "", role: { name: "Người dùng" } }}
         onButtonClick={() => {
           setPage(0);
-          fetchMyPosts(0, true);
+          fetchMyPosts(0);
         }}
       />
 
@@ -239,7 +226,7 @@ const MyPosts = () => {
         profile={{ displayName: "User", avatarUrl: "", role: { name: "Người dùng" } }}
         onButtonClick={() => {
           setPage(0);
-          fetchMyPosts(0, true);
+          fetchMyPosts(0);
         }}
       />
 
@@ -249,11 +236,12 @@ const MyPosts = () => {
         postId={selectedPostId}
         onButtonClick={() => {
           setPage(0);
-          fetchMyPosts(0, true);
+          fetchMyPosts(0);
         }}
       />
     </div>
   );
 };
+
 
 export default MyPosts;

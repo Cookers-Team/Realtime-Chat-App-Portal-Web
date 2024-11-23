@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { ImageUpIcon } from "lucide-react";
 import { toast } from "react-toastify";
-import useForm from "../../hooks/useForm";
-import useFetch from "../../hooks/useFetch";
-import { uploadImage2 } from "../../types/utils";
-import TextareaField from "./TextareaField";
-import CustomModal from "./CustomModal";
-import UserImg from "../../assets/user_icon.png";
+import useForm from "../../../hooks/useForm";
+import useFetch from "../../../hooks/useFetch";
+import { uploadImage2 } from "../../../types/utils";
+import TextareaField from "../../TextareaField";
+import CustomModal from "../../CustomModal";
+import UserImg from "../../../assets/user_icon.png";
 
 const CreatePost = ({ isVisible, setVisible, profile, onButtonClick }: any) => {
   const [imagePreviews, setImagePreviews] = useState<any[]>([]);

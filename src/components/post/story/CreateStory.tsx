@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
-import { remoteUrl } from '../../types/constant';
-import { useLoading } from '../../hooks/useLoading';
-import { uploadImage } from "../../types/utils";
+import { remoteUrl } from '../../../types/constant';
+import { useLoading } from '../../../hooks/useLoading';
+import { uploadImage } from "../../../types/utils";
 
 const CreateStory = ({ isVisible, setVisible, profile, onButtonClick }: any) => {
   const { showLoading, hideLoading } = useLoading();

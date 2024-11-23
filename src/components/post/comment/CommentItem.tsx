@@ -1,15 +1,15 @@
 // CommentItem.tsx
 import React from 'react';
 import { CommentModel } from '../../../models/comment/CommentModel';
+import ChildComments from './ChildComments'; 
 
-interface CommentItemProps {
+const CommentItem= ({ comment, isChild = false, childComments,  isLoading, onLoadMore}: {
   comment: CommentModel;
   isChild?: boolean;
-  children?: React.ReactNode; 
-}
-
-
-const CommentItem: React.FC<CommentItemProps> = ({ comment, isChild = false, children }) => (
+  childComments?: CommentModel[];
+  isLoading?: boolean;
+  onLoadMore?: (parentId: string, page: number) => Promise<{ hasMore: boolean; totalRemaining: number }>;
+}) => (
   <div className={`flex gap-2 ${isChild ? 'ml-8' : ''}`}>
   <img
     src={comment.user.avatarUrl || '/default-avatar.png'}
@@ -26,10 +26,18 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, isChild = false, chi
       <button className="font-semibold hover:underline text-gray-500">Phản hồi</button>
       <span className="text-gray-500">{comment.createdAt}</span>
     </div>
-    {children && <div className="mt-2">{children}</div>}
+    
+    {!isChild && onLoadMore && (
+      <ChildComments
+        parentId={comment._id}
+        childComments={childComments || []}
+        isLoading={isLoading || false}
+        onLoadMore={onLoadMore}
+        totalChildren={comment.totalChildren}
+      />
+    )}
   </div>
 </div>
-
 );
 
 export default CommentItem;

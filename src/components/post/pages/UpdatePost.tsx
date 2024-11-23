@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { ImageUpIcon } from "lucide-react";
 import { toast } from "react-toastify";
-import useForm from "../../hooks/useForm";
-import useFetch from "../../hooks/useFetch";
-import { uploadImage2 } from "../../types/utils"; // Giả sử đây là hàm upload ảnh
-import TextareaField from "./TextareaField";
-import CustomModal from "./CustomModal";
-import UserImg from "../../assets/user_icon.png";
+import useForm from "../../../hooks/useForm";
+import useFetch from "../../../hooks/useFetch";
+import { uploadImage2 } from "../../../types/utils"; // Giả sử đây là hàm upload ảnh
+import TextareaField from "../../TextareaField";
+import CustomModal from "../../CustomModal";
+import UserImg from "../../../assets/user_icon.png";
 
 const UpdatePost = ({ isVisible, setVisible, postId, onButtonClick }: any) => {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]); // Previews của ảnh mới

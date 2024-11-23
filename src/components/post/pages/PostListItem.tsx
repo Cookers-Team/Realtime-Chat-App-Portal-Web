@@ -1,15 +1,11 @@
 import React from "react";
 import { Search, FileText, Users, Bookmark , MoreVertical } from "lucide-react";
 
-interface PostListItemProps {
-  selectedPostSection: string;
-  setSelectedPostSection: (section: string) => void;
-}
 
-const PostListItem: React.FC<PostListItemProps> = ({
+const PostListItem = ({
   selectedPostSection,
-  setSelectedPostSection,
-}) => {
+  setSelectedPostSection
+}: any) => {
   return (
     <div className="p-4 flex flex-col justify-start">
       {/* Ô tìm kiếm */}

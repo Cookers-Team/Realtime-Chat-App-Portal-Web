@@ -1,49 +1,52 @@
 import React, { useState, useEffect } from 'react';
 import PostItem from './PostItem';
-import StoryViewer from './story/StoryViewer';
-import { useLoading } from '../../hooks/useLoading';
-import { remoteUrl } from '../../types/constant';
+import StoryViewer from '../story/StoryViewer';
+import { useLoading } from '../../../hooks/useLoading';
+import { remoteUrl } from '../../../types/constant';
 import { toast } from 'react-toastify';
-import InputField from '../InputField';
+import InputField from '../../InputField';
 import { Search } from 'lucide-react';
-import { LoadingDialog } from '../Dialog';
-import { PostModel } from '../../models/post/PostModel';
+import { LoadingDialog } from '../../Dialog';
+import { PostModel } from '../../../models/post/PostModel';
+import useFetch from '../../../hooks/useFetch';
 
 const CommunityPosts = () => {
   const [posts, setPosts] = useState<PostModel[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const { isLoading, showLoading, hideLoading } = useLoading();
+  const {get} = useFetch();
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
+
+  const itemsPerPage = 10;
   useEffect(() => {
-    fetchPosts();
+    fetchPosts(0);
   }, []);
 
-const fetchPosts = async () => {
-  showLoading();
+const fetchPosts = async (pageNumber: number) => {
+
   try {
-    const response = await fetch(`${remoteUrl}/v1/post/list?kind=1`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-      },
+    const response = await get(`/v1/post/list`, {
+      page: pageNumber,
+      size: itemsPerPage,
+      getListKind: 1,
+      
     });
-    const data = await response.json();
-    if (data.result) {
-      console.log(`Tổng số bài viết từ API: ${data.data.content.length}`);
-      
-      // Lọc bài viết có status === 2 (bài viết đã được duyệt)
-      const communityPosts = data.data.content.filter((post: PostModel) => post.status === 2);
-      console.log(`Số bài viết sau khi lọc: ${communityPosts.length}`);
-      
-      setPosts(communityPosts);
+    const data = response.data.content;
+
+    if (pageNumber === 0) {
+      setPosts(data);
     } else {
-      toast.error('Không thể tải bài viết của bạn bè');
+      setPosts((prevPosts) => [...prevPosts, ...data]);
     }
-  } catch (error) {
-    toast.error('Đã xảy ra lỗi khi tải bài viết');
+
+    setHasMore(data.length > 0);
+  } catch (error: any) {
+    console.error("Lỗi chi tiết:", error); 
+    
   } finally {
-    hideLoading();
+    setIsLoadingMore(false);
   }
 };
 
@@ -51,13 +54,13 @@ const fetchPosts = async () => {
   const handleDeletePost = async (postId: string) => {
     // Add delete functionality here
     // After successful deletion, refresh the posts
-    fetchPosts();
+    fetchPosts(0);
   };
 
   const handleEditPost = async (postId: string) => {
     // Add edit functionality here
     // After successful edit, refresh the posts
-    fetchPosts();
+    fetchPosts(0);
   };
 
   const filteredPosts = posts.filter((post) =>
@@ -67,7 +70,7 @@ const fetchPosts = async () => {
   return (
     <div className="flex flex-col h-full">
       <div className="sticky top-0 bg-white z-10 shadow-sm">
-        <h1 className="text-xl font-bold text-center py-2 m-0">Bài viết của bạn bè</h1>
+        <h1 className="text-xl font-bold text-center py-2 m-0">Bài viết cộng đồng</h1>
       </div>
 
       <div className="flex-grow overflow-y-auto">
@@ -87,14 +90,14 @@ const fetchPosts = async () => {
             filteredPosts.map((post) => (
               <PostItem
                 key={post._id}
-                {...post}
+                postItem={post}
                 onEdit={() => handleEditPost(post._id)}
                 onDelete={() => handleDeletePost(post._id)}
-                isPost={2}
+
               />
             ))
           ) : (
-            <p className="text-center text-gray-500">Không có bài viết nào từ bạn bè.</p>
+            <p className="text-center text-gray-500">Không có bài viết nào từ cộng đồng.</p>
           )}
         </div>
       </div>

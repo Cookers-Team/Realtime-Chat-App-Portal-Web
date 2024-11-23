@@ -1,27 +1,27 @@
-import React, { useState, useEffect } from "react";
-import { useLoading } from "../../hooks/useLoading";
-import { remoteUrl } from "../../types/constant";
-import { toast } from "react-toastify";
-import InputField from "../InputField";
-import { Search, ChevronDown, ChevronUp, MoreVertical, Info, Trash2 } from "lucide-react";
-import { LoadingDialog } from "../Dialog";
+import React, { useState, useEffect } from 'react';
+import { useLoading } from '../../hooks/useLoading';
+import { remoteUrl } from '../../types/constant';
+import { toast } from 'react-toastify';
+import InputField from '../InputField';
+import { Search, ChevronDown, ChevronUp, MoreVertical, Info, Trash2 } from 'lucide-react';
+import { LoadingDialog } from '../Dialog';
+import useFetch from '../../hooks/useFetch';
 
 interface Friend {
   _id: string;
-  friendId: string;
-  displayName?: string;
-  avatarUrl?: string;
-  lastLogin?: string;
+  displayName: string;
+  avatarUrl: string;
+  lastLogin: string;
 }
 
 const FriendsList = () => {
   const { isLoading, showLoading, hideLoading } = useLoading();
   const [friends, setFriends] = useState<Friend[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [openMenu, setOpenMenu] = useState<string | null>(null);
-
-  const defaultAvatar = "https://via.placeholder.com/150";
+  const { get } = useFetch();
+  const defaultAvatar = 'https://via.placeholder.com/150';
 
   useEffect(() => {
     fetchFriends();
@@ -30,46 +30,40 @@ const FriendsList = () => {
   const fetchFriends = async () => {
     showLoading();
     try {
-      const response = await fetch(`${remoteUrl}/v1/friendship/list?getListKind=3`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-        },
+      const response = await get(`/v1/friendship/list`, {
+        getListKind: 3,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        toast.error(errorData.message);
-        return;
+      console.log("API Response:", response);
+      if (response.result) {
+        console.log("Content data:", response.data.content);
+        const formattedFriends = response.data.content.map((friendship: any) => {
+          console.log("Processing friendship:", friendship); // Debug từng phần tử
+          return {
+            _id: friendship._id,
+            displayName: friendship.friend?.displayName || 'Unknown',
+            avatarUrl: friendship.friend?.avatarUrl || defaultAvatar,
+            lastLogin: friendship.friend?.lastLogin || 'Chưa đăng nhập',
+          };
+        });
+        console.log("tét friend");
+        setFriends(formattedFriends);
       }
-
-      const data = await response.json();
-      const formattedFriends = data.data.content.map((friendship: any) => {
-        return {
-          _id: friendship._id,
-          friendId: friendship.friend._id,
-          displayName: friendship.friend.displayName || "Unknown",
-          avatarUrl: friendship.friend.avatarUrl || defaultAvatar,
-          lastLogin: friendship.friend.lastLogin || "Chưa đăng nhập",
-        };
-      });
-
-      setFriends(formattedFriends);
+      
     } catch (error: any) {
+      console.log("Error fetching friends:", error);
       toast.error(error.message);
     } finally {
       hideLoading();
     }
   };
+  
 
   const filteredFriends = friends
     .filter((friend) =>
-      friend.displayName?.toLowerCase().includes(searchQuery.toLowerCase())
+      friend.displayName.toLowerCase().includes(searchQuery.toLowerCase())
     )
     .sort((a, b) => {
-      if (!a.displayName || !b.displayName) return 0;
-      if (sortOrder === "asc") {
+      if (sortOrder === 'asc') {
         return a.displayName.localeCompare(b.displayName);
       } else {
         return b.displayName.localeCompare(a.displayName);
@@ -78,7 +72,7 @@ const FriendsList = () => {
 
   const groupedFriends: { [key: string]: Friend[] } = filteredFriends.reduce(
     (acc, friend) => {
-      const firstLetter = friend.displayName?.charAt(0).toUpperCase() || "#";
+      const firstLetter = friend.displayName.charAt(0).toUpperCase() || '#';
       if (!acc[firstLetter]) {
         acc[firstLetter] = [];
       }
@@ -87,14 +81,13 @@ const FriendsList = () => {
     },
     {} as { [key: string]: Friend[] }
   );
-
+  
   const toggleMenu = (friendId: string) => {
     setOpenMenu(openMenu === friendId ? null : friendId);
   };
 
   const handleViewInfo = (friendId: string) => {
-    // Implement view info logic here
-    console.log("View info of friend:", friendId);
+    console.log('View info of friend:', friendId);
     setOpenMenu(null);
   };
 
@@ -102,24 +95,24 @@ const FriendsList = () => {
     try {
       showLoading();
       const response = await fetch(`${remoteUrl}/v1/friendship/delete/${friendshipId}`, {
-        method: "DELETE",
+        method: 'DELETE',
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
         },
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        toast.error(errorData.message || "Có lỗi xảy ra khi xóa bạn bè");
+        toast.error(errorData.message || 'Có lỗi xảy ra khi xóa bạn bè');
         return;
       }
 
-      toast.success("Đã xóa bạn bè thành công");
+      toast.success('Đã xóa bạn bè thành công');
       setFriends(friends.filter(friend => friend._id !== friendshipId));
     } catch (error) {
-      console.error("Lỗi khi xóa bạn bè:", error);
-      toast.error("Có lỗi xảy ra khi xóa bạn bè");
+      console.error('Lỗi khi xóa bạn bè:', error);
+      toast.error('Có lỗi xảy ra khi xóa bạn bè');
     } finally {
       hideLoading();
       setOpenMenu(null);
@@ -148,9 +141,9 @@ const FriendsList = () => {
         <div className="flex-shrink-0 -mt-2">
           <button
             className="flex items-center border border-gray-300 px-2 py-2 rounded-md focus:outline-none hover:bg-gray-100 h-10"
-            onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
           >
-            {sortOrder === "asc" ? (
+            {sortOrder === 'asc' ? (
               <>
                 <ChevronUp className="mr-1" /> Tên (A-Z)
               </>
@@ -173,16 +166,14 @@ const FriendsList = () => {
                 <div key={friend._id} className="flex items-center justify-between mb-4">
                   <div className="flex items-center">
                     <img
-                      src={friend.avatarUrl || defaultAvatar}
-                      alt={friend.displayName || "Unknown"}
+                      src={friend.avatarUrl}
+                      alt={friend.displayName}
                       className="w-12 h-12 rounded-full mr-4"
                     />
                     <div>
-                      <p className="font-semibold">
-                        {friend.displayName || "Unknown"}
-                      </p>
+                      <p className="font-semibold">{friend.displayName}</p>
                       <p className="text-gray-500 text-sm">
-                        Lần đăng nhập cuối: {friend.lastLogin || "Không rõ"}
+                        Lần đăng nhập cuối: {friend.lastLogin}
                       </p>
                     </div>
                   </div>
@@ -196,7 +187,7 @@ const FriendsList = () => {
                     {openMenu === friend._id && (
                       <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
                         <button
-                          onClick={() => handleViewInfo(friend.friendId)}
+                          onClick={() => handleViewInfo(friend._id)}
                           className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                         >
                           <Info size={16} className="mr-2" />
