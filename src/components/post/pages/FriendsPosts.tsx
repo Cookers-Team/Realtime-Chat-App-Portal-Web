@@ -17,7 +17,7 @@ const FriendsPosts = () => {
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const {get} = useFetch();
+  const {get, loading} = useFetch();
 
   const itemsPerPage = 10;
   useEffect(() => {
@@ -104,7 +104,7 @@ const FriendsPosts = () => {
         </div>
       </div>
 
-      <LoadingDialog isVisible={isLoading} />
+      <LoadingDialog isVisible={loading} />
     </div>
   );
 };

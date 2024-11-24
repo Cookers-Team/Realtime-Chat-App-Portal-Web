@@ -14,7 +14,7 @@ const CommunityPosts = () => {
   const [posts, setPosts] = useState<PostModel[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const { isLoading, showLoading, hideLoading } = useLoading();
-  const {get} = useFetch();
+  const {get, loading} = useFetch();
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
@@ -102,7 +102,7 @@ const fetchPosts = async (pageNumber: number) => {
         </div>
       </div>
 
-      <LoadingDialog isVisible={isLoading} />
+      <LoadingDialog isVisible={loading} />
     </div>
   );
 };

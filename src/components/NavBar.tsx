@@ -14,6 +14,8 @@ import { ConfimationDialog } from "./Dialog";
 import useDialog from "../hooks/useDialog";
 import ProfileModal from "../components/modal/ProfileModal";
 import EditProfileModal from "../components/modal/EditProfileModal";
+import { useProfile } from "../types/UserContext";
+import useFetch from "../hooks/useFetch";
 
 interface NavBarProps {
   setSelectedSection: (section: string) => void;
@@ -25,7 +27,9 @@ const NavBar: React.FC<NavBarProps> = ({ setSelectedSection }) => {
   const [activeSection, setActiveSection] = useState("messages");
   const navigate = useNavigate();
   const { isDialogVisible, showDialog, hideDialog } = useDialog();
-
+  const {setProfile} = useProfile();
+  const { get } = useFetch();
+  
   const handleProfileClick = () => {
     setProfileModalVisible(true);
     setActiveSection("profile");
@@ -42,6 +46,7 @@ const NavBar: React.FC<NavBarProps> = ({ setSelectedSection }) => {
 
   const onConfirmLogout = () => {
     localStorage.removeItem("accessToken");
+    setProfile(null);
     navigate("/");
     window.location.reload();
   };

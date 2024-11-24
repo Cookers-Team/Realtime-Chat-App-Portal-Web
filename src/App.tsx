@@ -26,6 +26,7 @@ const App = () => {
         setIsAuthenticated(false);
       }
     };
+    
     checkToken();
   }, []);
 

@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Smile } from 'lucide-react';
+import { Smile ,Send ,Image } from 'lucide-react';
 import { CommentModel } from '../../../models/comment/CommentModel';
 import { remoteUrl } from '../../../types/constant';
 import { toast } from 'react-toastify';
 import CommentItem from '../comment/CommentItem';
 import useFetch from '../../../hooks/useFetch';
 import { Oval } from 'react-loader-spinner';
+import { uploadImage } from '../../../types/utils';
+import { Profile } from '../../../models/profile/Profile';
 
 interface CommentState {
   parentComments: CommentModel[];
@@ -23,8 +25,10 @@ const CommentsSection = ({ postId, totalComments }: any) => {
   const [comments, setComments] = useState<CommentModel[]>([]);
   const [visibleParents, setVisibleParents] = useState(5);
   const [newComment, setNewComment] = useState('');
-  const { get } = useFetch();
+  const { get, post } = useFetch();
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [commentState, setCommentState] = useState<CommentState>({
     parentComments: [],
     childCommentsMap: {},
@@ -39,10 +43,12 @@ const CommentsSection = ({ postId, totalComments }: any) => {
   const PARENT_PAGE_SIZE = 2;
   const CHILD_PAGE_SIZE = 2;
 
+
+
+
   const fetchComments = useCallback(async (page: number) => {
     if (!commentState.hasMoreParents || commentState.loading) return;
     
-    // Prevent loading first page multiple times
     if (page === 0 && commentState.parentComments.length > 0) return;
   
     setCommentState((prev) => ({ ...prev, loading: true }));
@@ -75,7 +81,7 @@ const CommentsSection = ({ postId, totalComments }: any) => {
   }, [commentState.hasMoreParents, commentState.loading, commentState.parentComments.length, get, postId]);
 
   const fetchChildComments = useCallback(async (parentId: string, page: number) => {
-    setLoadingStates(prev => ({ ...prev, [parentId]: true })); // Đặt trạng thái loading cho comment cha
+    setLoadingStates(prev => ({ ...prev, [parentId]: true }));
     console.log("Fetching child comments for parentId:", parentId, "Page:", page);
   
     try {
@@ -88,7 +94,7 @@ const CommentsSection = ({ postId, totalComments }: any) => {
   
       if (response.result) {
         const newChildComments = response.data.content;
-        const totalPages = response.data.totalPages; // Đảm bảo API trả về tổng số trang
+        const totalPages = response.data.totalPages;
         console.log("Fetched child comments:", newChildComments);
         console.log("Total pages:", totalPages);
   
@@ -106,12 +112,11 @@ const CommentsSection = ({ postId, totalComments }: any) => {
             },
             childPagesMap: {
               ...prev.childPagesMap,
-              [parentId]: page < totalPages ? page : totalPages - 1, // Đảm bảo không vượt quá totalPages
+              [parentId]: page < totalPages ? page : totalPages - 1,
             },
           };
         });
   
-        // Trả về true nếu còn bình luận để tải (page < totalPages), ngược lại là false.
         return page + 1 < totalPages;
       } else {
         toast.error('Không thể tải bình luận phản hồi');
@@ -122,10 +127,9 @@ const CommentsSection = ({ postId, totalComments }: any) => {
       toast.error('Đã có lỗi xảy ra khi tải bình luận phản hồi');
       return false;
     } finally {
-      setLoadingStates(prev => ({ ...prev, [parentId]: false })); // Clear trạng thái loading
+      setLoadingStates(prev => ({ ...prev, [parentId]: false }));
     }
   }, [get]);
-  
 
   const loadMoreChildComments = useCallback((parentId: string) => {
     const currentPage = commentState.childPagesMap[parentId] ?? -1;
@@ -139,11 +143,27 @@ const CommentsSection = ({ postId, totalComments }: any) => {
     fetchComments(nextPage);
   }, [commentState.hasMoreParents, commentState.loading, commentState.parentPage, fetchComments]);
 
+  const handleImageUpload = async () => {
+    if (!selectedImage) return null;
+
+    const imageUrl = await uploadImage(selectedImage, post);
+    if (!imageUrl) {
+      toast.error('Không thể tải lên hình ảnh');
+    }
+    return imageUrl;
+  };
+  const handleImageSelection = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedImage(e.target.files[0]);
+    }
+  };
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newComment.trim()) return;
+    if (!newComment.trim() && !selectedImage) return;
 
     try {
+      const imageUrl = await handleImageUpload();
+
       const response = await fetch(`${remoteUrl}/v1/comment/create`, {
         method: 'POST',
         headers: {
@@ -151,20 +171,21 @@ const CommentsSection = ({ postId, totalComments }: any) => {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
         },
         body: JSON.stringify({
-          postId,
+          post: postId,
           content: newComment,
+          imageUrl, // Include the uploaded image URL
         }),
       });
 
       const data = await response.json();
       if (data.result) {
         setNewComment('');
-        // Reset state and fetch first page
+        setSelectedImage(null);
         setCommentState(prev => ({
           ...prev,
           parentComments: [],
           parentPage: 0,
-          hasMoreParents: true
+          hasMoreParents: true,
         }));
         fetchComments(0);
       } else {
@@ -176,8 +197,12 @@ const CommentsSection = ({ postId, totalComments }: any) => {
     }
   };
 
-  // Initial load of parent comments
   useEffect(() => {
+    const getProfile = async () => {
+      const res = await get("/v1/user/profile");
+      setProfile(res.data);
+    };
+    getProfile();
     fetchComments(0);
   }, [fetchComments]);
 
@@ -191,7 +216,7 @@ const CommentsSection = ({ postId, totalComments }: any) => {
       { 
         root: null, 
         rootMargin: '50px', 
-        threshold: 0.1  // Trigger khi element hiện 10%
+        threshold: 0.1
       }
     );
   
@@ -208,61 +233,66 @@ const CommentsSection = ({ postId, totalComments }: any) => {
 
   return (
     <div>
-      <div className="space-y-4">
-        {commentState.parentComments.map((comment) => (
-           <div key={`parent-${comment._id}`} className="space-y-2">
-            <CommentItem comment={comment} />
-            {comment.totalChildren > 0 && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => loadMoreChildComments(comment._id)}
-                  className="ml-8 mt-2 text-blue-500 font-semibold hover:underline"
-                  disabled={loadingStates[comment._id]}
-                >
-                  {loadingStates[comment._id] ? (
-                    <div className="flex items-center gap-2">
-                      <Oval
-                        height={16}
-                        width={16}
-                        color="#00BFFF"
-                        secondaryColor="#ccc"
-                        visible={true}
-                        ariaLabel="loading"
-                      />
-                      <span>Đang tải...</span>
-                    </div>
-                  ) : `Xem phản hồi (${comment.totalChildren})`}
-                </button>
-                
-                {commentState.childCommentsMap[comment._id] && (
-                  <div className="ml-8 space-y-2">
-                    {commentState.childCommentsMap[comment._id].map(childComment => (
-                      <CommentItem 
-                        key={`child-${childComment._id}`} 
-                        comment={childComment} 
-                        isChild 
-                      />
-                    ))}
-                    {/* Loading indicator for child comments */}
-                    {loadingStates[comment._id] && (
-                      <div className="flex justify-center py-2">
+      <div className="space-y-4 mb-0">
+        {commentState.parentComments.length === 0 && !commentState.loading ? (
+          <div className="text-center py-8 text-gray-500">
+            Chưa có bình luận
+          </div>
+        ) : (
+          commentState.parentComments.map((comment) => (
+            <div key={`parent-${comment._id}`} className="space-y-2">
+              <CommentItem comment={comment} />
+              {comment.totalChildren > 0 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => loadMoreChildComments(comment._id)}
+                    className="ml-8 mt-2 text-blue-500 font-semibold hover:underline"
+                    disabled={loadingStates[comment._id]}
+                  >
+                    {loadingStates[comment._id] ? (
+                      <div className="flex items-center gap-2">
                         <Oval
-                          height={24}
-                          width={24}
+                          height={16}
+                          width={16}
                           color="#00BFFF"
                           secondaryColor="#ccc"
                           visible={true}
                           ariaLabel="loading"
                         />
+                        <span>Đang tải...</span>
                       </div>
-                    )}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        ))}
+                    ) : `Xem phản hồi (${comment.totalChildren})`}
+                  </button>
+                  
+                  {commentState.childCommentsMap[comment._id] && (
+                    <div className="ml-8 space-y-2">
+                      {commentState.childCommentsMap[comment._id].map(childComment => (
+                        <CommentItem 
+                          key={`child-${childComment._id}`} 
+                          comment={childComment} 
+                          isChild 
+                        />
+                      ))}
+                      {loadingStates[comment._id] && (
+                        <div className="flex justify-center py-2">
+                          <Oval
+                            height={24}
+                            width={24}
+                            color="#00BFFF"
+                            secondaryColor="#ccc"
+                            visible={true}
+                            ariaLabel="loading"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          ))
+        )}
         
         {commentState.loading && (
           <div className="flex justify-center mt-4">
@@ -278,29 +308,6 @@ const CommentsSection = ({ postId, totalComments }: any) => {
         )}
         
         <div ref={observerRef} className="h-4" />
-      </div>
-
-      {/* Comment Input */}
-      <div className="sticky bottom-0 bg-white p-4 border-t">
-        <form onSubmit={handleSubmitComment} className="flex items-center gap-2">
-          <img 
-            src="/default-avatar.png" 
-            className="w-8 h-8 rounded-full" 
-            alt="Current user" 
-          />
-          <div className="flex-1 relative">
-            <input
-              type="text"
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Viết bình luận..."
-              className="w-full px-4 py-2 bg-gray-100 rounded-full pr-10"
-            />
-            <button type="button" className="absolute right-3 top-2 text-gray-500">
-              <Smile size={20} />
-            </button>
-          </div>
-        </form>
       </div>
     </div>
   );
