@@ -23,6 +23,7 @@ interface Conversation {
   lastLogin: string;
   avatarUrl: string;
   totalMembers: number;
+  totalUnreadMessages: number;
   canMessage: Number;
   canAddMember: Number;
   canUpdate: Number;
