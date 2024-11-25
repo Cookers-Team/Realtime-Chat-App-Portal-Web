@@ -12,12 +12,14 @@ const CommentItem = ({
   comment,
   isChild = false,
   childComments,
+  onUpdate ,
   isLoading,
   onLoadMore,
 }: {
   comment: CommentModel;
   isChild?: boolean;
   childComments?: CommentModel[];
+  onUpdate: () => void
   isLoading?: boolean;
   onLoadMore?: (
     parentId: string,
@@ -40,6 +42,21 @@ const CommentItem = ({
   const [isReplyLoading, setIsReplyLoading] = useState(false);
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);
   const [isUpdateLoading, setIsUpdateLoading] = useState(false);
+  const [isRepliesVisible, setIsRepliesVisible] = useState(false);
+  const [repliesVisible, setRepliesVisible] = useState(false);
+  const [remainingReplies, setRemainingReplies] = useState(comment.totalChildren || 0);
+  
+  const handleLoadMoreReplies = async () => {
+    if (!onLoadMore || remainingReplies === 0) return;
+
+    const currentPage = Math.ceil((childComments?.length || 0) / 5); // Assuming 5 replies per page
+    const result = await onLoadMore(comment._id, currentPage);
+
+    if (result) {
+      setRemainingReplies(result.totalRemaining); // Cập nhật số phản hồi còn lại
+      setRepliesVisible(true);
+    }
+  };
 
   const handleReplySubmit = async (text: string, parentId: string) => {
     if (!text.trim() && !selectedReplyImage) {
@@ -168,6 +185,7 @@ const CommentItem = ({
       setShowConfirm(false); // Ẩn pop-up xác nhận
       await del(`/v1/comment/delete/${comment._id}`); // Gọi API DELETE
       toast.success("Xóa bình luận thành công!");
+      onUpdate();
     } catch (err) {
       console.error(err);
       toast.error("Không thể xóa bình luận. Vui lòng thử lại!");
@@ -207,6 +225,7 @@ const CommentItem = ({
       setComment((prev) => ({ ...prev, ...updatedComment })); // Cập nhật state của comment
       toast.success("Cập nhật bình luận thành công!");
       setIsEditing(false); // Ẩn form chỉnh sửa
+      onUpdate();
     } catch (err) {
       console.error(err);
       toast.error("Không thể cập nhật bình luận. Vui lòng thử lại!");
@@ -485,6 +504,7 @@ const CommentItem = ({
               onImageSelect={handleImageSelect}
               selectedImage={selectedReplyImage}
               onRemoveImage={removeReplyImage}
+              onRefreshPostDetail={onUpdate}
             />
 
             {/* Image Preview */}

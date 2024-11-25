@@ -5,6 +5,7 @@ import { remoteUrl } from '../../types/constant';
 import { toast } from 'react-toastify';
 import { useLoading } from '../../hooks/useLoading';
 import { LoadingDialog } from '../Dialog';
+import useFetch from '../../hooks/useFetch';
 
 interface User {
   _id: string;
@@ -27,14 +28,22 @@ interface Friendship {
 interface AddFriendProps {
   isOpen: boolean;
   onClose: () => void;
+  updateFriendsList: () => void;
 }
 
-const AddFriend: React.FC<AddFriendProps> = ({ isOpen, onClose }) => {
+const AddFriend: React.FC<AddFriendProps> = ({ isOpen, onClose, updateFriendsList }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState<User[]>([]);
   const [friendships, setFriendships] = useState<Friendship[]>([]);
+  const [friendships2, setFriendships2] = useState<Friendship[]>([]);
+  const [friendships3, setFriendships3] = useState<Friendship[]>([]);
   const [searchResults, setSearchResults] = useState<User[]>([]);
   const { isLoading, showLoading, hideLoading } = useLoading();
+  const { get , loading} = useFetch();
+  const [currentPage, setCurrentPage] = useState(0); // Trang hiện tại
+  const [hasMore, setHasMore] = useState(true); // Kiểm tra còn dữ liệu không
+  const [isFetching, setIsFetching] = useState(false); // Trạng thái tải dữ liệu
+
   const getUserIdFromToken = () => {
     const token = localStorage.getItem('accessToken');
     if (!token) return null;
@@ -51,35 +60,11 @@ const AddFriend: React.FC<AddFriendProps> = ({ isOpen, onClose }) => {
   const userId = getUserIdFromToken();
 
   useEffect(() => {
-    fetchUsers();
     fetchFriendships(1); 
     fetchFriendships(2);
     fetchFriendships(3);
   }, []);
 
-  // Lấy danh sách tất cả người dùng
-  const fetchUsers = async () => {
-    try {
-      const response = await fetch(`${remoteUrl}/v1/user/list`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        toast.error(errorData.message);
-        return;
-      }
-
-      const data = await response.json();
-      setUsers(data.data.content);
-    } catch (error) {
-      toast.error('Đã xảy ra lỗi khi lấy danh sách người dùng.');
-    }
-  };
 
   const fetchFriendships = async (kind: number) => {
     try {
@@ -106,19 +91,49 @@ const AddFriend: React.FC<AddFriendProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleSearch = () => {
-    const results = users.filter(
-      (user) =>
-        user._id !== userId && // Ẩn người dùng có `userId` hiện tại
-        (user.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.studentId.includes(searchQuery) ||
-        user.phone.includes(searchQuery))
-    );
-    setSearchResults(results);
+  const fetchUsers = async () => {
+    try {
+      showLoading(); // Hiển thị trạng thái tải
+      const response = await get(`/v1/user/list?&isPaged=0`); // API trả về toàn bộ user
+      const allUsers = response.data.content || [];
+      setUsers(allUsers); // Lưu toàn bộ user vào state
+      setSearchResults(allUsers); // Hiển thị mặc định toàn bộ user
+    } catch (error) {
+      console.error("Lỗi khi tải danh sách user:", error);
+      toast.error("Đã xảy ra lỗi khi lấy danh sách người dùng.");
+    } finally {
+      hideLoading(); // Ẩn trạng thái tải
+    }
   };
   
-
+  const handleSearch = async () => {
+    showLoading(); // Hiển thị trạng thái tải
+    try {
+      // Gọi API, bao gồm nội dung tìm kiếm nếu có
+      const query = searchQuery.trim() 
+        ? `/v1/user/list?isPaged=0&displayName=${encodeURIComponent(searchQuery.trim())}` 
+        : `/v1/user/list?isPaged=0`;
+      
+      const response = await get(query);
+      const fetchedUsers = response.data.content || []; // Lấy danh sách user trực tiếp từ API
+      
+      // Lọc user, loại bỏ user có id trùng với userId
+      const filteredUsers = fetchedUsers.filter((user:any) => user._id !== userId);
+      
+      setUsers(fetchedUsers); // Cập nhật state users (nếu cần tái sử dụng danh sách đầy đủ)
+      setSearchResults(filteredUsers); // Hiển thị kết quả tìm kiếm (loại bỏ user có userId)
+      
+      console.log("Danh sách user sau tìm kiếm:", filteredUsers);
+    } catch (error) {
+      console.error("Lỗi khi tìm kiếm:", error);
+      toast.error("Đã xảy ra lỗi trong quá trình tìm kiếm.");
+    } finally {
+      hideLoading(); // Ẩn trạng thái tải
+    }
+  };
+  
+  
+  
   const getFriendshipKind = (searchedUserId: string, friendships: Friendship[]): number | undefined => {
     const friendship = friendships.find(
       (f) =>
@@ -242,6 +257,7 @@ const AddFriend: React.FC<AddFriendProps> = ({ isOpen, onClose }) => {
             : friendship
         )
       );
+      updateFriendsList();
     } catch (error) {
       console.error('Lỗi khi chấp nhận lời mời kết bạn:', error);
       toast.error('Đã xảy ra lỗi khi chấp nhận lời mời kết bạn.');
@@ -302,7 +318,7 @@ const AddFriend: React.FC<AddFriendProps> = ({ isOpen, onClose }) => {
           <div className="relative mb-4">
             <input
               type="text"
-              placeholder="Tên, email, mã sinh viên hoặc số điện thoại"
+              placeholder="Tên"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"

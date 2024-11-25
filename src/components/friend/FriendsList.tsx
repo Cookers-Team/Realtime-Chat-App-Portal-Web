@@ -3,9 +3,10 @@ import { useLoading } from '../../hooks/useLoading';
 import { remoteUrl } from '../../types/constant';
 import { toast } from 'react-toastify';
 import InputField from '../InputField';
-import { Search, ChevronDown, ChevronUp, MoreVertical, Info, Trash2 } from 'lucide-react';
+import { Search, ChevronDown, ChevronUp, MoreVertical, Info, Trash2, UserPlus } from 'lucide-react';
 import { LoadingDialog } from '../Dialog';
 import useFetch from '../../hooks/useFetch';
+import AddFriend from './AddFriend';
 
 interface Friend {
   _id: string;
@@ -21,6 +22,8 @@ const FriendsList = () => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const { get } = useFetch();
+  const [isAddFriendOpen, setIsAddFriendOpen] = useState(false);
+
   const defaultAvatar = 'https://via.placeholder.com/150';
 
   useEffect(() => {
@@ -118,6 +121,9 @@ const FriendsList = () => {
       setOpenMenu(null);
     }
   };
+  const updateFriendsList = async () => {
+    await fetchFriends();
+  };
 
   return (
     <div className="p-4">
@@ -154,6 +160,12 @@ const FriendsList = () => {
             )}
           </button>
         </div>
+        <button
+          className="flex items-center border border-gray-300 px-2 py-2 rounded-md focus:outline-none hover:bg-gray-100 h-10"
+          onClick={() => setIsAddFriendOpen(true)}
+        >
+          <UserPlus className="mr-1" /> Thêm bạn bè
+        </button>
       </div>
 
       {Object.keys(groupedFriends).length > 0 ? (
@@ -210,6 +222,11 @@ const FriendsList = () => {
       ) : (
         <p className="text-gray-500">Không tìm thấy bạn bè</p>
       )}
+      <AddFriend
+        isOpen={isAddFriendOpen}
+        onClose={() => setIsAddFriendOpen(false)}
+        updateFriendsList={updateFriendsList}
+      />
       <LoadingDialog isVisible={isLoading} />
     </div>
   );
