@@ -1,63 +1,65 @@
 import React, { useState, useEffect } from 'react';
 import PostItem from './PostItem';
-import StoryViewer from './story/StoryViewer';
-import { useLoading } from '../../hooks/useLoading';
-import { remoteUrl } from '../../types/constant';
+import StoryViewer from '../story/StoryViewer';
+import { useLoading } from '../../../hooks/useLoading';
+import { remoteUrl } from '../../../types/constant';
 import { toast } from 'react-toastify';
-import InputField from '../InputField';
+import InputField from '../../InputField';
 import { Search } from 'lucide-react';
-import { LoadingDialog } from '../Dialog';
-import { PostModel } from '../../models/post/PostModel';
+import { LoadingDialog } from '../../Dialog';
+import { PostModel } from '../../../models/post/PostModel';
+import useFetch from '../../../hooks/useFetch';
 
-const CommunityPosts = () => {
+const FriendsPosts = () => {
   const [posts, setPosts] = useState<PostModel[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const { isLoading, showLoading, hideLoading } = useLoading();
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
+  const {get, loading} = useFetch();
+
+  const itemsPerPage = 10;
   useEffect(() => {
-    fetchPosts();
+    fetchPosts(0);
   }, []);
 
-const fetchPosts = async () => {
-  showLoading();
-  try {
-    const response = await fetch(`${remoteUrl}/v1/post/list?kind=1`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-      },
-    });
-    const data = await response.json();
-    if (data.result) {
-      console.log(`Tổng số bài viết từ API: ${data.data.content.length}`);
-      
-      // Lọc bài viết có status === 2 (bài viết đã được duyệt)
-      const communityPosts = data.data.content.filter((post: PostModel) => post.status === 2);
-      console.log(`Số bài viết sau khi lọc: ${communityPosts.length}`);
-      
-      setPosts(communityPosts);
-    } else {
-      toast.error('Không thể tải bài viết của bạn bè');
-    }
-  } catch (error) {
-    toast.error('Đã xảy ra lỗi khi tải bài viết');
-  } finally {
-    hideLoading();
-  }
-};
+  const fetchPosts = async (pageNumber: number) => {
 
+    try {
+      const response = await get(`/v1/post/list`, {
+        page: pageNumber,
+        size: itemsPerPage,
+        getListkind: 2,
+        
+      });
+      const data = response.data.content;
+
+      if (pageNumber === 0) {
+        setPosts(data);
+      } else {
+        setPosts((prevPosts) => [...prevPosts, ...data]);
+      }
+  
+      setHasMore(data.length > 0);
+    } catch (error: any) {
+      console.error("Lỗi chi tiết:", error); 
+      
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   const handleDeletePost = async (postId: string) => {
     // Add delete functionality here
     // After successful deletion, refresh the posts
-    fetchPosts();
+    fetchPosts(0);
   };
 
   const handleEditPost = async (postId: string) => {
     // Add edit functionality here
     // After successful edit, refresh the posts
-    fetchPosts();
+    fetchPosts(0);
   };
 
   const filteredPosts = posts.filter((post) =>
@@ -81,16 +83,19 @@ const fetchPosts = async () => {
               className="w-full h-10 pl-10 pr-4 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-
+          
+          <div className="bg-white mb-4 relative">
+            <StoryViewer />
+          </div>
 
           {filteredPosts.length > 0 ? (
             filteredPosts.map((post) => (
               <PostItem
                 key={post._id}
-                {...post}
+                postItem={post}
                 onEdit={() => handleEditPost(post._id)}
                 onDelete={() => handleDeletePost(post._id)}
-                isPost={2}
+               // isPost={2}
               />
             ))
           ) : (
@@ -99,9 +104,9 @@ const fetchPosts = async () => {
         </div>
       </div>
 
-      <LoadingDialog isVisible={isLoading} />
+      <LoadingDialog isVisible={loading} />
     </div>
   );
 };
 
-export default CommunityPosts;
+export default FriendsPosts;

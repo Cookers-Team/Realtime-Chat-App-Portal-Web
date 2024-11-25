@@ -10,6 +10,7 @@ import NotFound from "./views/NotFound";
 import Loading from "./views/Loading";
 import { useEffect, useState } from "react";
 import useFetch from "./hooks/useFetch";
+import { ToastContainer } from "react-toastify";
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -26,6 +27,7 @@ const App = () => {
         setIsAuthenticated(false);
       }
     };
+    
     checkToken();
   }, []);
 
@@ -54,6 +56,7 @@ const App = () => {
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
+          <ToastContainer/>
         </>
       )}
     </>

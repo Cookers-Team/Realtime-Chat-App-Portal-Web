@@ -1,5 +1,5 @@
 import { XIcon } from "lucide-react";
-import { LoadingDialog } from "../Dialog";
+import { LoadingDialog } from "./Dialog";
 
 // Định nghĩa kiểu cho `color`
 type ColorType = "blue" | "red" | "green" | "yellow";

@@ -10,14 +10,17 @@ import FriendListItem from "../components/friend/FriendListItem";
 import FriendsList from "../components/friend/FriendsList";
 import GroupList from "../components/friend/GroupList";
 import FriendRequests from "../components/friend/FriendRequests";
-import PostListItem from "../components/post/PostListItem";
-import MyPosts from "../components/post/MyPosts";
-import FriendsPosts from "../components/post/FriendsPosts";
-import CommunityPosts from "../components/post/CommunityPosts";
+import PostListItem from "../components/post/pages/PostListItem";
+//import MyPosts from "../components/post/pages/MyPosts";
+import MyPosts from "../components/post/pages/MyPosts";
+import FriendsPosts from "../components/post/pages/FriendsPosts";
+import CommunityPosts from "../components/post/pages/CommunityPosts";
 import useSocketChat from "../hooks/useSocketChat";
 import { remoteUrl } from "../types/constant";
 import { Menu, X } from "lucide-react";
 import NotificationPanel from "../components/notification/NotificationPanel";
+import NotificationPopup from "../components/notification/NotificationPopup";
+import { useProfile } from "../types/UserContext";
 
 const Home = () => {
   const [selectedSection, setSelectedSection] = useState("messages");
@@ -30,10 +33,12 @@ const Home = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { get, post } = useFetch();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
+  const [isLargeScreen, setIsLargeScreen] = useState(window.innerWidth >= 1024);
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
+  const {profile, setProfile} = useProfile();
+
 
   const handleConversationUpdate = useCallback(
     async (updatedConversation: Conversation) => {
@@ -48,11 +53,14 @@ const Home = () => {
     []
   );
 
+
   const fetchUserCurrent = useCallback(async () => {
     try {
       const response = await get("/v1/user/profile");
       setUserCurrent(response.data);
+      setProfile(response.data)
       console.log("User ID fetched in Home:", response.data._id);
+      
     } catch (error) {
       console.error("Error getting user id:", error);
     }
@@ -86,7 +94,15 @@ const Home = () => {
       fetchConversations();
     }
   }, [selectedSection, userCurrent, fetchConversations]);
+  useEffect(() => {
+    const handleResize = () => {
+      setIsLargeScreen(window.innerWidth >= 1024);
+    };
+    window.addEventListener("resize", handleResize);
 
+    // Xóa sự kiện lắng nghe khi component unmount
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
   const handleMessageChange = useCallback(() => {
     if (selectedSection === "messages" && userCurrent) {
       console.log("Message changed, updating conversations...");
@@ -226,9 +242,8 @@ const Home = () => {
             <FriendsList />
           )
         ) : selectedSection === "posts" ? (
-          <div className="flex h-full">
-            {/* Container cho hai phần bên trái */}
-            <div className="flex-2 w-2/3 bg-white p-4">
+           <div className="flex h-full">
+            <div className={`bg-white p-4 ${isLargeScreen ? "w-2/3" : "w-full"}`}>
               {selectedPostSection === "myPosts" ? (
                 <MyPosts />
               ) : selectedPostSection === "friendsPosts" ? (
@@ -239,20 +254,18 @@ const Home = () => {
                 <MyPosts />
               )}
             </div>
-            {/* Phần thông báo bên phải */}
 
-            {/* Phần thông báo bên phải */}
-            <div className="flex-1  bg-gray-100 p-4">
-              <NotificationPanel />
-            </div>
-          </div>
-        ) : selectedSection === "settings" ? (
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Cài đặt</h2>
-            <p>Hiển thị các cài đặt tại đây...</p>
+            {/* Phần thông báo */}
+            {isLargeScreen && (
+              <div className="flex-1 bg-gray-100 p-4">
+                <NotificationPanel />
+              </div>
+            )}
           </div>
         ) : null}
       </div>
+
+      <NotificationPopup />
       <LoadingDialog isVisible={isLoading} />
     </div>
   );
