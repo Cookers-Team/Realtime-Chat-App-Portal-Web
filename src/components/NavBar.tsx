@@ -14,6 +14,8 @@ import { ConfimationDialog } from "./Dialog";
 import useDialog from "../hooks/useDialog";
 import ProfileModal from "../components/modal/ProfileModal";
 import EditProfileModal from "../components/modal/EditProfileModal";
+import { useProfile } from "../types/UserContext";
+import useFetch from "../hooks/useFetch";
 
 interface NavBarProps {
   setSelectedSection: (section: string) => void;
@@ -25,7 +27,9 @@ const NavBar: React.FC<NavBarProps> = ({ setSelectedSection }) => {
   const [activeSection, setActiveSection] = useState("messages");
   const navigate = useNavigate();
   const { isDialogVisible, showDialog, hideDialog } = useDialog();
-
+  const {setProfile} = useProfile();
+  const { get } = useFetch();
+  
   const handleProfileClick = () => {
     setProfileModalVisible(true);
     setActiveSection("profile");
@@ -42,6 +46,7 @@ const NavBar: React.FC<NavBarProps> = ({ setSelectedSection }) => {
 
   const onConfirmLogout = () => {
     localStorage.removeItem("accessToken");
+    setProfile(null);
     navigate("/");
     window.location.reload();
   };
@@ -126,24 +131,7 @@ const NavBar: React.FC<NavBarProps> = ({ setSelectedSection }) => {
           />
         </button>
 
-        <button
-          data-tooltip-id="tooltip-settings"
-          data-tooltip-content="Cài đặt"
-          onClick={() => {
-            setSelectedSection("settings");
-            setActiveSection("settings");
-          }}
-          className={`focus:outline-none ${
-            activeSection === "settings" ? "text-yellow-400" : ""
-          }`}
-        >
-          <Settings
-            size={24}
-            className={`transition-transform ${
-              activeSection === "settings" ? "scale-125" : "hover:scale-110"
-            }`}
-          />
-        </button>
+       
 
         <button
           data-tooltip-id="tooltip-logout"
@@ -158,7 +146,6 @@ const NavBar: React.FC<NavBarProps> = ({ setSelectedSection }) => {
         <Tooltip id="tooltip-messages" style={{ zIndex: 100 }} />
         <Tooltip id="tooltip-posts" style={{ zIndex: 100 }} />
         <Tooltip id="tooltip-friends" style={{ zIndex: 100 }} />
-        <Tooltip id="tooltip-settings" style={{ zIndex: 100 }} />
         <Tooltip id="tooltip-logout" style={{ zIndex: 100 }} />
 
         {/* Render các modals */}

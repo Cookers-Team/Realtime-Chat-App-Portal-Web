@@ -1,18 +1,18 @@
 import { useState, useEffect } from "react";
-import { ImageUpIcon } from "lucide-react";
+import { ImageUpIcon, X } from "lucide-react"; // Thêm icon X
 import { toast } from "react-toastify";
-import useForm from "../../hooks/useForm";
-import useFetch from "../../hooks/useFetch";
-import { uploadImage2 } from "../../types/utils"; // Giả sử đây là hàm upload ảnh
-import TextareaField from "./TextareaField";
-import CustomModal from "./CustomModal";
-import UserImg from "../../assets/user_icon.png";
-
-const UpdatePost = ({ isVisible, setVisible, postId, onButtonClick }: any) => {
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]); // Previews của ảnh mới
+import useForm from "../../../hooks/useForm";
+import useFetch from "../../../hooks/useFetch";
+import { uploadImage2 } from "../../../types/utils";
+import TextareaField from "../../TextareaField";
+import CustomModal from "../../CustomModal";
+import UserImg from "../../../assets/user_icon.png";
+import { Profile } from "../../../models/profile/Profile";
+const UpdatePost = ({ isVisible, setVisible, profile, postId, onButtonClick }: any) => {
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [kind, setKind] = useState<number>(1);
-  const [imageUrls, setImageUrls] = useState<string[]>([]); // URLs của ảnh cũ và mới
-
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [user, setUser] = useState<Profile>();
   const validate = (form: any) => {
     const errors: any = {};
     if (!form.content.trim()) errors.content = "Nội dung không được bỏ trống";
@@ -20,7 +20,7 @@ const UpdatePost = ({ isVisible, setVisible, postId, onButtonClick }: any) => {
   };
 
   const { form, errors, setForm, setErrors, handleChange, isValidForm } =
-    useForm({ content: "", imageUrls: [], kind: 1 }, {}, validate);
+    useForm({ content: "", imageUrls: [], user, kind: 1 }, {}, validate);
 
   const { get, put, post, loading } = useFetch();
 
@@ -32,16 +32,17 @@ const UpdatePost = ({ isVisible, setVisible, postId, onButtonClick }: any) => {
         const res = await get(`/v1/post/get/${postId}`);
         setForm({ ...res.data });
         setKind(res.data.kind || 1);
-        setImageUrls(res.data.imageUrls || []); 
+        setImageUrls(res.data.imageUrls || []);
+        setUser(profile)
       }
     };
     fetchData();
   }, [isVisible, postId]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []) as File[]; 
+    const files = Array.from(e.target.files || []) as File[];
     const fileReaders: Promise<void>[] = [];
-    
+
     files.forEach((file: File) => {
       const reader = new FileReader();
       const readerPromise = new Promise<void>((resolve) => {
@@ -50,30 +51,27 @@ const UpdatePost = ({ isVisible, setVisible, postId, onButtonClick }: any) => {
           resolve();
         };
       });
-      reader.readAsDataURL(file); 
+      reader.readAsDataURL(file);
       fileReaders.push(readerPromise);
     });
-  
+
     Promise.all(fileReaders).catch(() => {
       toast.error("Lỗi khi tải hình ảnh");
     });
   };
-  
 
   const handleUpdate = async () => {
     if (isValidForm()) {
-      
       const newImageUrls = await Promise.all(
         imagePreviews.map((imagePreview) => uploadImage2(imagePreview, post))
       );
 
-    
       const updatedImageUrls = [...imageUrls, ...newImageUrls];
 
       const res = await put("/v1/post/update", {
         id: postId,
         content: form.content,
-        imageUrls: updatedImageUrls, 
+        imageUrls: updatedImageUrls,
         kind,
       });
 
@@ -86,6 +84,14 @@ const UpdatePost = ({ isVisible, setVisible, postId, onButtonClick }: any) => {
       }
     } else {
       toast.error("Vui lòng kiểm tra lại thông tin");
+    }
+  };
+
+  const removeImage = (index: number, isPreview: boolean) => {
+    if (isPreview) {
+      setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+    } else {
+      setImageUrls((prev) => prev.filter((_, i) => i !== index));
     }
   };
 
@@ -107,14 +113,13 @@ const UpdatePost = ({ isVisible, setVisible, postId, onButtonClick }: any) => {
                 <div className="flex space-x-2">
                   <p className="font-semibold">{form.user?.displayName}</p>
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                    {form.user?.role.name}
+                    {user?.role.name}
                   </span>
                 </div>
                 <p className="text-gray-500 text-sm">{form.createdAt}</p>
               </div>
             </div>
 
-            {/* Dropdown cho lựa chọn "kind" */}
             <select
               value={kind}
               onChange={(e) => setKind(parseInt(e.target.value))}
@@ -152,11 +157,33 @@ const UpdatePost = ({ isVisible, setVisible, postId, onButtonClick }: any) => {
                 <div className="grid grid-cols-2 gap-4">
                   {/* Hiển thị ảnh cũ */}
                   {imageUrls.map((url, index) => (
-                    <img key={index} src={url} className="max-w-full object-contain rounded-lg" />
+                    <div className="relative" key={`url-${index}`}>
+                      <img
+                        src={url}
+                        className="max-w-full object-contain rounded-lg"
+                      />
+                      <button
+                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full"
+                        onClick={() => removeImage(index, false)}
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
                   ))}
                   {/* Hiển thị preview ảnh mới */}
                   {imagePreviews.map((preview, index) => (
-                    <img key={index} src={preview} className="max-w-full object-contain rounded-lg" />
+                    <div className="relative" key={`preview-${index}`}>
+                      <img
+                        src={preview}
+                        className="max-w-full object-contain rounded-lg"
+                      />
+                      <button
+                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full"
+                        onClick={() => removeImage(index, true)}
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
                   ))}
                 </div>
               ) : (
