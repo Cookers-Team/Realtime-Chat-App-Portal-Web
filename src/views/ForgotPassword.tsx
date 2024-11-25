@@ -6,9 +6,10 @@ import { remoteUrl } from "../types/constant";
 import { ToastContainer, toast } from "react-toastify";
 import { MailIcon, LockIcon } from "lucide-react";
 import { useLoading } from "../hooks/useLoading";
-import { LoadingDialog } from "../components/Dialog";
+import { AlertDialog, LoadingDialog } from "../components/Dialog";
 import UTELogo from "../assets/ute_logo.png";
 import ForgotPwLogo from "../assets/forgot-pw-page.png";
+import { set } from "react-datepicker/dist/date_utils";
 
 type FormFields = {
   email: string;
@@ -33,6 +34,8 @@ const ForgotPassword = () => {
 
   const [showNewPassword, setShowNewPassword] = useState(false);
   const { isLoading, showLoading, hideLoading } = useLoading();
+  const [isAlertVisible, setIsAlertVisible] = useState(false);
+  const [isAlertSuccessVisible, setIsAlertSuccessVisible] = useState(false);
 
   const validate = (field: keyof FormFields, value: string) => {
     const newErrors = { ...errors };
@@ -76,7 +79,7 @@ const ForgotPassword = () => {
         toast.error(errorData.message);
         return;
       }
-      toast.success("OTP đã được gửi đến email của bạn");
+      setIsAlertVisible(true);
       setStep(2);
     } catch (error) {
       toast.error("Có lỗi xảy ra, vui lòng thử lại sau.");
@@ -112,10 +115,7 @@ const ForgotPassword = () => {
         return;
       }
 
-      toast.success("Mật khẩu đã được đặt lại thành công");
-      setTimeout(() => {
-        navigate("/");
-      }, 2000);
+      setIsAlertSuccessVisible(true);
     } catch (error) {
       console.error("Error:", error);
       toast.error("Có lỗi xảy ra, vui lòng thử lại sau.");
@@ -204,6 +204,26 @@ const ForgotPassword = () => {
           )}
         </div>
         <LoadingDialog isVisible={isLoading} />
+        <AlertDialog
+          isVisible={isAlertVisible}
+          title="Thông báo"
+          message="OTP đã được gửi đến email của bạn!"
+          onAccept={() => {
+            setIsAlertVisible(false);
+            navigate(
+              `/forgot-password?email=${encodeURIComponent(form.email)}`
+            );
+          }}
+        />
+        <AlertDialog
+          isVisible={isAlertSuccessVisible}
+          title="Thông báo"
+          message="Mật khẩu đã được đặt lại thành công!"
+          onAccept={() => {
+            setIsAlertVisible(false);
+            navigate(`/`);
+          }}
+        />
         <ToastContainer />
       </div>
     </div>
