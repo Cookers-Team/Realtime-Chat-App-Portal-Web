@@ -351,7 +351,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
   const handleAlertAccept = () => {
     localStorage.removeItem("accessToken");
-    navigate("/");
+    window.location.reload();
   };
 
   return (
