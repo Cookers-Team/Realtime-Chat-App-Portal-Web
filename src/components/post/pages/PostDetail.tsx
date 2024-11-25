@@ -8,6 +8,7 @@ import { uploadImage } from '../../../types/utils';
 import useFetch from '../../../hooks/useFetch';
 import { useProfile } from '../../../types/UserContext';
 import { LoadingDialog } from '../../Dialog';
+import { CommentModel } from '../../../models/comment/CommentModel';
 
 
 const PostDetail= ({
@@ -21,8 +22,9 @@ const PostDetail= ({
   const {get, post} = useFetch();
   const {profile} = useProfile();
   const [isLoading, setIsLoading] = useState(true);
-  
-
+  const [comments, setComments] = useState<CommentModel[]>([]);
+  const [totalComments, setTotalComments] = useState(postItem.totalComments);
+  const [totalReactions, setTotalReactions] = useState(postItem.totalReactions);
   useEffect(() => {
    
     const loadPostDetails = async () => {
@@ -84,7 +86,7 @@ const PostDetail= ({
       } else {
         toast.error('Không thể đăng bình luận');
       }
-      
+      setTotalComments((prev: any) => prev + 1);
     } catch (error) {
       console.error('Error posting comment:', error);
       toast.error('Đã có lỗi xảy ra khi đăng bình luận');
@@ -107,7 +109,27 @@ const PostDetail= ({
       prev === 0 ? postItem.imageUrls.length - 1 : prev - 1
     );
   };
+
+  const refreshPostDetail = async () => {
+    try {
+      setIsLoading(true); 
+      const response = await get('/v1/comment/list', { post: postItem._id });
+      if (response.result) {
+        setComments(response.data.content); 
+        console.log("commet", response.data.totalElements)
+        setTotalComments(response.data.totalElements); 
+      }
+    } catch (error) {
+      console.error('Error refreshing post detail:', error);
+    } finally {
+      setIsLoading(false); 
+    }
+  };
   
+
+  useEffect(() => {
+    refreshPostDetail(); 
+  }, [postItem]);
   return (
     <div className="relative">
       {/* Loading Dialog */}
@@ -137,9 +159,7 @@ const PostDetail= ({
                 <p className="font-semibold">{postItem.user.displayName}</p>
                 <p className="text-sm text-gray-500">{postItem.createdAt}</p>
               </div>
-              <button className="ml-auto text-gray-500">
-                <MoreHorizontal size={20} />
-              </button>
+              
             </div>
 
             {/* Post Content */}
@@ -194,7 +214,7 @@ const PostDetail= ({
                 )}
               </div>
               <div className="flex gap-3">
-                <span>{postItem.totalComments} bình luận</span>
+                <span>{totalComments} bình luận</span>
               </div>
             </div>
 
@@ -203,7 +223,7 @@ const PostDetail= ({
               <CommentsSection 
                   postId={postItem._id} 
                   totalComments={postItem.totalComments} 
-              
+                  onRefresh={refreshPostDetail}
                   />
             </div>
           </div>

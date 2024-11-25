@@ -30,6 +30,8 @@ const FriendsPosts = () => {
       const response = await get(`/v1/post/list`, {
         page: pageNumber,
         size: itemsPerPage,
+        ignoreFriendship: 1,
+        status: 2,
         getListkind: 2,
         
       });

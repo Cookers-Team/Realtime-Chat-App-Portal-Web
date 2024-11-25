@@ -9,14 +9,11 @@ const PostListItem = ({
   return (
     <div className="p-4 flex flex-col justify-start">
       {/* Ô tìm kiếm */}
-      <div className="relative mb-6">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-        <input
-          type="text"
-          placeholder="Tìm kiếm bài đăng"
-          className="pl-10 py-2 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
+      <h1 className="text-2xl font-bold mb-6 text-center">Quản lý bài đăng</h1>
+  
+    <div className="relative mb-6">
+      {/* Các nội dung khác */}
+    </div>
 
       {/* Điều hướng Bài đăng của tôi */}
       <div

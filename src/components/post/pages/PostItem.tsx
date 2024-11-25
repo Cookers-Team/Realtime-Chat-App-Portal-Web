@@ -192,8 +192,9 @@ const PostItem = ({ postItem, onEdit, onDelete } :
             <img
               src={postItem.imageUrls[currentImageIndex]}
               alt={`Image ${currentImageIndex + 1}`}
-              className="w-full h-full object-cover rounded-lg"
+              className="w-full h-full object-contain rounded-lg"
             />
+
             {postItem.imageUrls.length > 1 && (
               <>
                 <button

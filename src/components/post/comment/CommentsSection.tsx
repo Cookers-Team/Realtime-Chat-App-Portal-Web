@@ -21,7 +21,7 @@ interface LoadingStates {
   [key: string]: boolean;
 }
 
-const CommentsSection = ({ postId, totalComments }: any) => {
+const CommentsSection = ({ postId, totalComments, onRefresh  }: any) => {
   const [comments, setComments] = useState<CommentModel[]>([]);
   const [visibleParents, setVisibleParents] = useState(5);
   const [newComment, setNewComment] = useState('');
@@ -40,11 +40,14 @@ const CommentsSection = ({ postId, totalComments }: any) => {
   const observerRef = useRef<HTMLDivElement | null>(null);
   const [loadingStates, setLoadingStates] = useState<LoadingStates>({});
 
-  const PARENT_PAGE_SIZE = 2;
-  const CHILD_PAGE_SIZE = 2;
+  const PARENT_PAGE_SIZE = 10;
+  const CHILD_PAGE_SIZE = 5;
 
 
-
+  const handleCommentUpdate = async () => {
+    // Khi hoàn tất update hoặc delete, gọi lại onRefresh
+    await onRefresh();
+  };
 
   const fetchComments = useCallback(async (page: number) => {
     if (!commentState.hasMoreParents || commentState.loading) return;
@@ -157,45 +160,7 @@ const CommentsSection = ({ postId, totalComments }: any) => {
       setSelectedImage(e.target.files[0]);
     }
   };
-  const handleSubmitComment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newComment.trim() && !selectedImage) return;
-
-    try {
-      const imageUrl = await handleImageUpload();
-
-      const response = await fetch(`${remoteUrl}/v1/comment/create`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-        },
-        body: JSON.stringify({
-          post: postId,
-          content: newComment,
-          imageUrl, // Include the uploaded image URL
-        }),
-      });
-
-      const data = await response.json();
-      if (data.result) {
-        setNewComment('');
-        setSelectedImage(null);
-        setCommentState(prev => ({
-          ...prev,
-          parentComments: [],
-          parentPage: 0,
-          hasMoreParents: true,
-        }));
-        fetchComments(0);
-      } else {
-        toast.error('Không thể đăng bình luận');
-      }
-    } catch (error) {
-      console.error('Error posting comment:', error);
-      toast.error('Đã có lỗi xảy ra khi đăng bình luận');
-    }
-  };
+  
 
   useEffect(() => {
     fetchComments(0);
@@ -235,57 +200,39 @@ const CommentsSection = ({ postId, totalComments }: any) => {
             Chưa có bình luận
           </div>
         ) : (
-          commentState.parentComments.map((comment) => (
-            <div key={`parent-${comment._id}`} className="space-y-2">
-              <CommentItem comment={comment} />
-              {comment.totalChildren > 0 && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => loadMoreChildComments(comment._id)}
-                    className="ml-8 mt-2 text-blue-500 font-semibold hover:underline"
-                    disabled={loadingStates[comment._id]}
-                  >
-                    {loadingStates[comment._id] ? (
-                      <div className="flex items-center gap-2">
-                        <Oval
-                          height={16}
-                          width={16}
-                          color="#00BFFF"
-                          secondaryColor="#ccc"
-                          visible={true}
-                          ariaLabel="loading"
-                        />
-                        <span>Đang tải...</span>
-                      </div>
-                    ) : `Xem phản hồi`}
-                  </button>
-                  
-                  {commentState.childCommentsMap[comment._id] && (
-                    <div className="ml-8 space-y-2">
-                      {commentState.childCommentsMap[comment._id].map(childComment => (
-                        <CommentItem 
-                          key={`child-${childComment._id}`} 
-                          comment={childComment} 
-                          isChild 
-                        />
-                      ))}
-                      {loadingStates[comment._id] && (
-                        <div className="flex justify-center py-2">
-                          <Oval
-                            height={24}
-                            width={24}
-                            color="#00BFFF"
-                            secondaryColor="#ccc"
-                            visible={true}
-                            ariaLabel="loading"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
+          commentState.parentComments.map((comment, index) => (
+            <div key={`parent-${comment._id}-${index}`} className="space-y-2">
+                <CommentItem comment={comment} onUpdate={handleCommentUpdate}/>
+                {comment.totalChildren > 0 && (
+                    <>
+                        <button
+                            type="button"
+                            onClick={() => loadMoreChildComments(comment._id)}
+                            className="ml-8 mt-2 text-blue-500 font-semibold hover:underline"
+                            disabled={loadingStates[comment._id]}
+                        >
+                            {loadingStates[comment._id] ? (
+                                <div className="flex items-center gap-2">
+                                    <Oval height={16} width={16} color="#00BFFF" secondaryColor="#ccc" visible={true} ariaLabel="loading" />
+                                    <span>Đang tải...</span>
+                                </div>
+                            ) : `Xem ${comment.totalChildren} phản hồi`}
+                        </button>
+                        
+                        {commentState.childCommentsMap[comment._id] && (
+                            <div className="ml-8 space-y-2">
+                                {commentState.childCommentsMap[comment._id].map((childComment, childIndex) => (
+                                    <CommentItem key={`child-${childComment._id}-${childIndex}`} comment={childComment} onUpdate={handleCommentUpdate} isChild />
+                                ))}
+                                {loadingStates[comment._id] && (
+                                    <div className="flex justify-center py-2">
+                                        <Oval height={24} width={24} color="#00BFFF" secondaryColor="#ccc" visible={true} ariaLabel="loading" />
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </>
+                )}
             </div>
           ))
         )}
