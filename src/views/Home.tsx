@@ -257,11 +257,6 @@ const Home = () => {
               </div>
             )}
           </div>
-        ) : selectedSection === "settings" ? (
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Cài đặt</h2>
-            <p>Hiển thị các cài đặt tại đây...</p>
-          </div>
         ) : null}
       </div>
 

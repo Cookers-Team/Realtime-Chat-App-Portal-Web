@@ -7,6 +7,7 @@ import { remoteUrl } from '../../../types/constant';
 import { uploadImage } from '../../../types/utils';
 import useFetch from '../../../hooks/useFetch';
 import { useProfile } from '../../../types/UserContext';
+import { LoadingDialog } from '../../Dialog';
 
 
 const PostDetail= ({
@@ -17,9 +18,27 @@ const PostDetail= ({
   const [isLiked, setIsLiked] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  //const [profile, setProfile] = useState<Profile | null>(null);
   const {get, post} = useFetch();
   const {profile} = useProfile();
+  const [isLoading, setIsLoading] = useState(true);
+  
+
+  useEffect(() => {
+   
+    const loadPostDetails = async () => {
+      try {
+        setIsLoading(true);
+        await new Promise((resolve) => setTimeout(resolve, 2000)); 
+      } catch (error) {
+        console.error("Lỗi khi tải dữ liệu:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadPostDetails();
+  }, [postItem]);
+
   const handleImageSelection = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedImage(e.target.files[0]);
@@ -39,7 +58,7 @@ const PostDetail= ({
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newComment.trim() && !selectedImage) return;
-  
+    setIsLoading(true);
     try {
       const imageUrl = await handleImageUpload();
   
@@ -65,9 +84,12 @@ const PostDetail= ({
       } else {
         toast.error('Không thể đăng bình luận');
       }
+      
     } catch (error) {
       console.error('Error posting comment:', error);
       toast.error('Đã có lỗi xảy ra khi đăng bình luận');
+    } finally{
+      setIsLoading(false);
     }
   };
 
@@ -85,9 +107,12 @@ const PostDetail= ({
       prev === 0 ? postItem.imageUrls.length - 1 : prev - 1
     );
   };
-
-
+  
   return (
+    <div className="relative">
+      {/* Loading Dialog */}
+      <LoadingDialog isVisible={isLoading} />
+      {!isLoading && (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
       <div className="bg-white w-full max-w-2xl rounded-lg my-4 flex flex-col h-[90vh]">
         {/* Header - Sticky */}
@@ -170,45 +195,48 @@ const PostDetail= ({
               </div>
               <div className="flex gap-3">
                 <span>{postItem.totalComments} bình luận</span>
-                <h2>{postItem.postId}</h2>
               </div>
             </div>
 
             {/* Comments List */}
             <div className="mt-4 pb-4">
-              <CommentsSection postId={postItem._id} totalComments={postItem.totalComments} />
+              <CommentsSection 
+                  postId={postItem._id} 
+                  totalComments={postItem.totalComments} 
+              
+                  />
             </div>
           </div>
         </div>
 
         {/* Comment Input - Fixed at bottom */}
         {/* Form bình luận */}
-<div className="border-t bg-white p-4 mt-auto">
-  <form onSubmit={handleSubmitComment} className="flex flex-col gap-2">
-    <div className="flex items-center gap-2">
-      <img
-        src={profile?.avatarUrl}
-        className="w-8 h-8 rounded-full"
-        alt="Current user"
-      />
-      <input
-        type="text"
-        value={newComment}
-        onChange={(e) => setNewComment(e.target.value)}
-        placeholder="Viết bình luận..."
-        className="w-full px-4 py-2 bg-gray-100 rounded-full"
-      />
-      <div className="relative">
-        <input
-          type="file"
-          accept="image/*"
-          className="hidden"
-          id="image-upload"
-          onChange={handleImageSelection}
-        />
-        <label htmlFor="image-upload" className="cursor-pointer">
-  <IconImage size={20} className="text-gray-500 hover:text-blue-500" />
-</label>
+        <div className="border-t bg-white p-4 mt-auto">
+          <form onSubmit={handleSubmitComment} className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <img
+                src={profile?.avatarUrl}
+                className="w-8 h-8 rounded-full"
+                alt="Current user"
+              />
+              <input
+                type="text"
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Viết bình luận..."
+                className="w-full px-4 py-2 bg-gray-100 rounded-full"
+              />
+              <div className="relative">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  id="image-upload"
+                  onChange={handleImageSelection}
+                />
+                <label htmlFor="image-upload" className="cursor-pointer">
+          <IconImage size={20} className="text-gray-500 hover:text-blue-500" />
+        </label>
 
       </div>
       <button
@@ -241,7 +269,9 @@ const PostDetail= ({
 
       </div>
     </div>
-  );
+   )}
+   </div>
+ );
 };
 
 export default PostDetail;

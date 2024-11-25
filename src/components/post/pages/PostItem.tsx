@@ -24,7 +24,7 @@ const PostItem = ({ postItem, onEdit, onDelete } :
   const [showModal, setShowModal] = useState(false);
   const [isLiked, setIsLiked] = useState(false); 
   const [isLiking, setIsLiking] = useState(false); 
-  const {get, post} = useFetch();
+  const {get, post, loading} = useFetch();
   
   const toggleMenu = () => {
     setShowMenu(!showMenu);
@@ -58,7 +58,6 @@ const PostItem = ({ postItem, onEdit, onDelete } :
 
 
   const handleShowModal = () => {
-    console.log("Post Item khi mở modal:", postItem);
   setShowModal(true);
   };
 

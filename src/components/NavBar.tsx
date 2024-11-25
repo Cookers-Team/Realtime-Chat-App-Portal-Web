@@ -131,24 +131,7 @@ const NavBar: React.FC<NavBarProps> = ({ setSelectedSection }) => {
           />
         </button>
 
-        <button
-          data-tooltip-id="tooltip-settings"
-          data-tooltip-content="Cài đặt"
-          onClick={() => {
-            setSelectedSection("settings");
-            setActiveSection("settings");
-          }}
-          className={`focus:outline-none ${
-            activeSection === "settings" ? "text-yellow-400" : ""
-          }`}
-        >
-          <Settings
-            size={24}
-            className={`transition-transform ${
-              activeSection === "settings" ? "scale-125" : "hover:scale-110"
-            }`}
-          />
-        </button>
+       
 
         <button
           data-tooltip-id="tooltip-logout"
@@ -163,7 +146,6 @@ const NavBar: React.FC<NavBarProps> = ({ setSelectedSection }) => {
         <Tooltip id="tooltip-messages" style={{ zIndex: 100 }} />
         <Tooltip id="tooltip-posts" style={{ zIndex: 100 }} />
         <Tooltip id="tooltip-friends" style={{ zIndex: 100 }} />
-        <Tooltip id="tooltip-settings" style={{ zIndex: 100 }} />
         <Tooltip id="tooltip-logout" style={{ zIndex: 100 }} />
 
         {/* Render các modals */}

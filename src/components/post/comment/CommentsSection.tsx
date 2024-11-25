@@ -198,11 +198,6 @@ const CommentsSection = ({ postId, totalComments }: any) => {
   };
 
   useEffect(() => {
-    const getProfile = async () => {
-      const res = await get("/v1/user/profile");
-      setProfile(res.data);
-    };
-    getProfile();
     fetchComments(0);
   }, [fetchComments]);
 
@@ -233,6 +228,7 @@ const CommentsSection = ({ postId, totalComments }: any) => {
 
   return (
     <div>
+      
       <div className="space-y-4 mb-0">
         {commentState.parentComments.length === 0 && !commentState.loading ? (
           <div className="text-center py-8 text-gray-500">
@@ -262,7 +258,7 @@ const CommentsSection = ({ postId, totalComments }: any) => {
                         />
                         <span>Đang tải...</span>
                       </div>
-                    ) : `Xem phản hồi (${comment.totalChildren})`}
+                    ) : `Xem phản hồi`}
                   </button>
                   
                   {commentState.childCommentsMap[comment._id] && (

@@ -16,7 +16,7 @@ const CreatePost = ({
   selectedEmotion,
 }: any) => {
   const [imagePreviews, setImagePreviews] = useState<any[]>([]);
-  const [kind, setKind] = useState<number>(1); // Default: Community Post
+  const [kind, setKind] = useState<number>(1); 
 
   const validate = (form: any) => {
     const errors: any = {};

@@ -5,6 +5,8 @@ import useFetch from '../../../hooks/useFetch';
 import { remoteUrl } from '../../../types/constant';
 import { uploadImage } from '../../../types/utils';
 import { toast } from 'react-toastify';
+import { LoadingDialog } from '../../Dialog';
+import CommentReplyInterface from './CommentReplyInterface';
 
 const CommentItem = ({
   comment,
@@ -35,18 +37,21 @@ const CommentItem = ({
   const [editImage, setEditImage] = useState<File | null>(null); 
   const [editImagePreview, setEditImagePreview] = useState(comment.imageUrl || ""); 
   const [editContent, setEditContent] = useState<string>(comment.content || "");
+  const [isReplyLoading, setIsReplyLoading] = useState(false);
+  const [isDeleteLoading, setIsDeleteLoading] = useState(false);
+  const [isUpdateLoading, setIsUpdateLoading] = useState(false);
 
-
-  const handleReplySubmit = async (e: React.FormEvent, parentId: string) => {
-    e.preventDefault();
-  
-    if (!newReply.trim() && !selectedReplyImage) {
+  const handleReplySubmit = async (text: string, parentId: string) => {
+    if (!text.trim() && !selectedReplyImage) {
       alert('Phản hồi phải có nội dung hoặc hình ảnh!');
       return;
     }
   
+    setIsReplyLoading(true);
     try {
-      const imageUrl = selectedReplyImage ? await uploadImage(selectedReplyImage, post) : '';
+      const imageUrl = selectedReplyImage
+        ? await uploadImage(selectedReplyImage, post)
+        : '';
       const response = await fetch(`${remoteUrl}/v1/comment/create`, {
         method: 'POST',
         headers: {
@@ -55,7 +60,7 @@ const CommentItem = ({
         },
         body: JSON.stringify({
           post: comment.post._id,
-          content: newReply.trim(),
+          content: text.trim(),
           parent: parentId,
           imageUrl,
         }),
@@ -63,22 +68,23 @@ const CommentItem = ({
   
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('API Error:', errorData);
         throw new Error(errorData.message || 'Không thể gửi phản hồi!');
       }
   
       const data = await response.json();
       console.log('Phản hồi đã gửi thành công:', data);
   
-      // Reset trạng thái sau khi gửi thành công
-      setNewReply('');
+      setNewReply(''); // Reset trạng thái
       setSelectedReplyImage(null);
       setReplyTo(null);
     } catch (error) {
       console.error('Lỗi khi gửi phản hồi:', error);
       alert('Đã xảy ra lỗi khi gửi phản hồi. Vui lòng thử lại.');
+    } finally {
+      setIsReplyLoading(false);
     }
   };
+  
   
 
   const handleImageSelect = (files: FileList | null) => {
@@ -93,12 +99,11 @@ const CommentItem = ({
   };
   
   const handleLike = async (commentId: string) => {
-    if (isLiking) return; // Ngăn chặn nhiều lần nhấn khi đang loading
-    setIsLiking(true); // Bắt đầu loading
+    if (isLiking) return; 
+    setIsLiking(true); 
 
     try {
       if (!isLiked) {
-        // Gọi API để thêm thích
         const response = await fetch(`${remoteUrl}/v1/comment-reaction/create`, {
           method: 'POST',
           headers: {
@@ -158,6 +163,7 @@ const CommentItem = ({
   const toggleMenu = () => setMenuVisible((prev) => !prev);
 
   const handleDelete = async () => {
+    setIsDeleteLoading(true);
     try {
       setShowConfirm(false); // Ẩn pop-up xác nhận
       await del(`/v1/comment/delete/${comment._id}`); // Gọi API DELETE
@@ -165,20 +171,19 @@ const CommentItem = ({
     } catch (err) {
       console.error(err);
       toast.error("Không thể xóa bình luận. Vui lòng thử lại!");
+    }finally {
+      setIsDeleteLoading(false); 
     }
   };
   
 
   const handleUpdateComment = async () => {
+    setIsUpdateLoading(true);
     try {
       let imageUrl = editImagePreview;
-  
-      // Nếu có ảnh mới, upload và lấy URL
       if (editImage) {
         imageUrl = await uploadImage(editImage, post);
       }
-  
-      // Gửi request cập nhật bình luận
       const response = await fetch(`${remoteUrl}/v1/comment/update`, {
         method: "PUT",
         headers: {
@@ -205,11 +210,14 @@ const CommentItem = ({
     } catch (err) {
       console.error(err);
       toast.error("Không thể cập nhật bình luận. Vui lòng thử lại!");
+    }finally {
+      setIsUpdateLoading(false); 
     }
   };
 
   return (
     <div className={`flex gap-2 ${isChild ? 'ml-8' : ''}`}>
+      <LoadingDialog isVisible={isDeleteLoading} />
       {/* User Avatar */}
       <img
         src={comment.user.avatarUrl || '/default-avatar.png'}
@@ -281,6 +289,7 @@ const CommentItem = ({
               Phản hồi
             </button>
           )}
+          
           <span className="text-gray-500">{comment.createdAt}</span>
         </div>
         {comment.isOwner === 1 && (
@@ -354,10 +363,10 @@ const CommentItem = ({
                 <div className="mt-4 flex justify-end gap-2">
                   <button
                     onClick={handleDelete} // Xác nhận xóa
-                    disabled={loading}
+                    disabled={isDeleteLoading}
                     className="px-4 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 disabled:opacity-50"
                   >
-                    {loading ? "Đang xóa..." : "Xóa"}
+                    {isDeleteLoading ? "Đang xóa..." : "Xóa"}
                   </button>
                   <button
                     onClick={() => setShowConfirm(false)} // Hủy
@@ -442,8 +451,9 @@ const CommentItem = ({
                 <button
                   onClick={handleUpdateComment}
                   className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                  disabled={isUpdateLoading}
                 >
-                  Lưu
+                  {isUpdateLoading ? 'Đang lưu...' : 'Lưu'}
                 </button>
                 <button
                   onClick={() => setIsEditing(false)}
@@ -456,8 +466,7 @@ const CommentItem = ({
           </div>
         )}
 
-        {/* Render Child Comments */}
-        {!isChild && onLoadMore && (
+      {!isChild && onLoadMore && (
           <ChildComments
             parentId={comment._id}
             childComments={childComments || []}
@@ -467,59 +476,34 @@ const CommentItem = ({
           />
         )}
 
-        {/* Reply Box (Hiển thị dưới Child Comments) */}
+        {/* Reply Box (Di chuyển xuống dưới Child Comments) */}
         {!isChild && replyTo === comment._id && (
-          <form
-            onSubmit={(e) => handleReplySubmit(e, comment._id)}
-            className="mt-2 flex flex-col gap-2 ml-8"
-          >
-            <textarea
-              value={newReply}
-              onChange={(e) => setNewReply(e.target.value)}
-              placeholder="Viết phản hồi..."
-              className="w-full px-4 py-2 bg-gray-100 rounded-lg resize-none"
-              rows={3}
+          <div className="mt-2">
+            <CommentReplyInterface
+              onSubmit={(text: string) => handleReplySubmit(text, comment._id)}
+              isLoading={isReplyLoading}
+              onImageSelect={handleImageSelect}
+              selectedImage={selectedReplyImage}
+              onRemoveImage={removeReplyImage}
             />
-            <div className="flex items-center gap-2">
-              {/* Image Upload */}
-              <label
-                htmlFor={`reply-image-${comment._id}`}
-                className="flex items-center gap-2 cursor-pointer text-blue-500 hover:underline"
-              >
-                <img src="/icons/image-upload-icon.svg" alt="Upload" className="w-6 h-6" />
-                <span>Thêm hình ảnh</span>
-              </label>
-              <input
-                id={`reply-image-${comment._id}`}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => handleImageSelect(e.target.files)}
-              />
-            </div>
+
             {/* Image Preview */}
             {selectedReplyImage && (
-              <div className="relative">
+              <div className="relative mt-2">
                 <img
                   src={URL.createObjectURL(selectedReplyImage)}
                   alt="Preview"
-                  className="mt-2 rounded-lg max-w-full"
+                  className="rounded-lg max-w-full"
                 />
                 <button
-                  onClick={removeReplyImage}
+                  onClick={() => setSelectedReplyImage(null)}
                   className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full"
                 >
                   X
                 </button>
               </div>
             )}
-            <button
-              type="submit"
-              className="self-end px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-            >
-              Gửi phản hồi
-            </button>
-          </form>
+          </div>
         )}
       </div>
     </div>

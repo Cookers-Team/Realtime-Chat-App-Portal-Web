@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 import { useLoading } from '../../../hooks/useLoading';
 import { LoadingDialog } from '../../Dialog';
 import CreateStory from './CreateStory';
+import { useProfile } from "../../../types/UserContext";
 
 const StoryViewer = () => {
   const [stories, setStories] = useState<(StoryModel | { id: string; type: string; displayName: string })[]>([
@@ -24,6 +25,7 @@ const StoryViewer = () => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const { isLoading, showLoading, hideLoading } = useLoading();
   const [isCreateVisible, setCreateVisible] = useState(false);
+  const { profile } = useProfile();
 
   const storiesPerPage = 4;
   const autoTransitionTime = 5000;
@@ -34,22 +36,24 @@ const StoryViewer = () => {
     fetchInitialStories();
   }, []);
 
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (isPopupVisible && !isPaused && currentStory) {
-      timer = setInterval(() => {
-        setProgress((prev) => {
-          const newProgress = prev + (100 / (autoTransitionTime / 100));
-          if (newProgress >= 100) {
-            handleNextStory(); 
-            return 0; 
-          }
-          return newProgress;
-        });
-      }, 100);
-    }
-    return () => clearInterval(timer);
-  }, [isPopupVisible, currentStory?._id, isPaused]);
+useEffect(() => {
+  if (isPopupVisible && currentStory && !isPaused) {
+    const progressInterval = setInterval(() => {
+      setProgress((prev) => {
+        const newProgress = prev + (100 / (autoTransitionTime / 100));
+        if (newProgress >= 100) {
+          clearInterval(progressInterval); 
+          handleNextStory(); 
+          return 0; 
+        }
+        return newProgress;
+      });
+    }, 100);
+
+    return () => clearInterval(progressInterval);
+  }
+}, [isPopupVisible, currentStory?._id, isPaused]);
+
   
 
   const fetchInitialStories = async () => {
@@ -141,35 +145,40 @@ const StoryViewer = () => {
   };
 
   const handleNextStory = async () => {
-    setIsTransitioning(true); 
+    setIsTransitioning(true);
+    setProgress(0); // Reset progress ngay lập tức
   
     if (!currentStory?.nextStory) {
-      setIsPopupVisible(false);
+      setIsPopupVisible(false); // Đóng viewer nếu không có story tiếp theo
       setIsTransitioning(false);
       return;
     }
   
     const nextStory = await fetchStoryById(currentStory.nextStory);
     if (nextStory) {
-      setCurrentStory(nextStory);
-      setIsPaused(false);
-      setProgress(0);
+      setCurrentStory(nextStory); // Đặt story mới
+      setIsPaused(false); // Tiếp tục nếu đang tạm dừng
       setIsTransitioning(false);
     }
   };
+  
   
   const handlePrevStory = async () => {
     if (!currentStory?.previousStory) {
       return;
     }
   
+    setIsTransitioning(true);
+    setProgress(0); 
+  
     const prevStory = await fetchStoryById(currentStory.previousStory);
     if (prevStory) {
-      setCurrentStory(prevStory);
-      setIsPaused(false);
-      setProgress(0); 
+      setCurrentStory(prevStory); 
+      setIsPaused(false); 
+      setIsTransitioning(false);
     }
   };
+  
   
   
    const nextStories = () => {
@@ -203,78 +212,78 @@ const StoryViewer = () => {
 
   
   return (
-    <div className="relative w-full max-w-6xl mx-auto px-4 py-6">
-      <div className="flex items-center space-x-4 relative">
-        {/* Navigation Buttons */}
-        {canScrollLeft && (
-          <button
-            onClick={prevStories}
-            className="absolute left-0 z-10 p-2 rounded-full bg-white shadow-lg hover:bg-gray-100"
-          >
-            <ChevronLeft className="w-6 h-6 text-gray-600" />
-          </button>
-        )}
-
-        {/* Stories Grid */}
-        <div className="flex space-x-4 overflow-hidden">
-  {visibleStories.map((story) => (
-    <div key={'id' in story ? story.id : story._id} className="flex-shrink-0 w-32">
-      {isCreateType(story) ? (
-        // Create Story Button
-        <div
-          className="relative h-48 rounded-xl bg-gray-100 flex flex-col items-center justify-between pb-4 cursor-pointer hover:bg-gray-200"
-          onClick={() => setCreateVisible(true)}
+    <div className="flex justify-center relative space-x-4 w-full">
+      {/* Navigation Buttons */}
+      {canScrollLeft && (
+        <button
+          onClick={prevStories}
+          className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 p-2 rounded-full bg-white shadow-lg hover:bg-gray-100"
         >
-          <div className="w-full h-36 bg-white rounded-t-xl flex items-center justify-center">
-            <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">
-              <Plus className="w-6 h-6 text-white" />
-            </div>
-          </div>
-          <span className="text-sm font-medium text-center">{story.displayName}</span>
-        </div>
-      ) : (
-        // Story Item
-        <div
-          className="relative h-48 rounded-xl overflow-hidden cursor-pointer group"
-          onClick={() => openStoryViewer(story as StoryModel)}
-        >
-          <img
-            src={story.imageUrl || '/placeholder-image.png'}
-            alt={story.user?.displayName || 'Story Image'}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute top-2 left-2">
-            <div className="w-10 h-10 rounded-full border-4 border-blue-500 overflow-hidden">
-              <img
-                src={story.user?.avatarUrl || '/default-avatar.png'}
-                alt={story.user?.displayName || 'User Avatar'}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          </div>
-          <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/60 to-transparent">
-            <p className="text-white text-xs font-medium leading-tight">
-              {story.user?.displayName || 'Anonymous'}
-            </p>
-          </div>
-        </div>
+          <ChevronLeft className="w-6 h-6 text-gray-600" />
+        </button>
       )}
-    </div>
-  ))}
-</div>
 
-
-        {/* Next Button */}
-        {canScrollRight && (
-          <button
-            onClick={nextStories}
-            className="absolute right-0 z-10 p-2 rounded-full bg-white shadow-lg hover:bg-gray-100"
-          >
-            <ChevronRight className="w-6 h-6 text-gray-600" />
-          </button>
-        )}
+      {/* Stories Grid */}
+      <div className="flex justify-center space-x-4 overflow-hidden">
+        {visibleStories.map((story) => (
+          <div key={'id' in story ? story.id : story._id} className="flex-shrink-0 w-32">
+            {isCreateType(story) ? (
+              // Create Story Button
+              <div
+                className="relative h-48 rounded-xl bg-gray-100 flex flex-col items-center justify-between pb-4 cursor-pointer hover:bg-gray-200"
+                onClick={() => setCreateVisible(true)}
+              >
+                <div className="w-full h-36 bg-white rounded-t-xl flex items-center justify-center"
+                style={{
+                  backgroundImage: `url(${profile?.avatarUrl || '/default-avatar.png'})`,
+                }}
+                >
+                  <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">
+                    <Plus className="w-6 h-6 text-white" />
+                  </div>
+                </div>
+                <span className="text-sm font-medium text-center">{story.displayName}</span>
+              </div>
+            ) : (
+              // Story Item
+              <div
+                className="relative h-48 rounded-xl overflow-hidden cursor-pointer group"
+                onClick={() => openStoryViewer(story as StoryModel)}
+              >
+                <img
+                  src={story.imageUrl || '/placeholder-image.png'}
+                  alt={story.user?.displayName || 'Story Image'}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute top-2 left-2">
+                  <div className="w-10 h-10 rounded-full border-4 border-blue-500 overflow-hidden">
+                    <img
+                      src={story.user?.avatarUrl || '/default-avatar.png'}
+                      alt={story.user?.displayName || 'User Avatar'}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/60 to-transparent">
+                  <p className="text-white text-xs font-medium leading-tight">
+                    {story.user?.displayName || 'Anonymous'}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
 
+      {/* Next Button */}
+      {canScrollRight && (
+        <button
+          onClick={nextStories}
+          className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 p-2 rounded-full bg-white shadow-lg hover:bg-gray-100"
+        >
+          <ChevronRight className="w-6 h-6 text-gray-600" />
+        </button>
+      )}
       {isPopupVisible && currentStory && (
         <div className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center">
           {/* Close Button */}
