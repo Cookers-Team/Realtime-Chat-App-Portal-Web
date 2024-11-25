@@ -1,10 +1,42 @@
-## Zalo UTE (PORTAL)
+## PORTAL - Zalo UTE
 
-### Group Members:
+This project serves as the user portal for the Zalo UTE application. The portal provides access to various features and functionalities for users. For the backend API repository that powers the portal, refer to the link below:
 
-| Name                  | Student ID | GitHub                                          |
-| --------------------- | ---------- | ----------------------------------------------- |
-| Kiến Đức Trọng        | 21110332   | [kaytervn](https://github.com/kaytervn)         |
-| Nguyễn Trần Văn Trung | 21110335   | [vantrung1109](https://github.com/vantrung1109) |
-| Lê Trọng Dũng         | 21110157   | [trongdung721](https://github.com/trongdung721) |
-| Võ Hữu Tài            | 21110294   | [vohuutai23](https://github.com/vohuutai23)     |
+**API Repository**: [Zalo UTE API](https://github.com/The-Cookies-Team/Realtime-Chat-App-API)
+
+---
+
+## Installation
+
+```sh
+npm install
+```
+
+## Usage
+
+### Setting constant variables
+
+1. Open the file located at `src/types/constants.ts`
+2. Update the **remoteUrl** variable to point to your API's URL.
+
+Example:
+
+```ts
+const remoteUrl = "http://localhost:7979";
+```
+
+### Starting the server
+
+First build the project
+
+```sh
+npm run build
+```
+
+And start it
+
+```sh
+npm start
+```
+
+Your application will be accessible from `localhost:3000`
