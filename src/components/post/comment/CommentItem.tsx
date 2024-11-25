@@ -4,6 +4,7 @@ import ChildComments from './ChildComments';
 import useFetch from '../../../hooks/useFetch';
 import { remoteUrl } from '../../../types/constant';
 import { uploadImage } from '../../../types/utils';
+import { toast } from 'react-toastify';
 
 const CommentItem = ({
   comment,
@@ -24,12 +25,18 @@ const CommentItem = ({
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [newReply, setNewReply] = useState('');
   const [selectedReplyImage, setSelectedReplyImage] = useState<File | null>(null);
-  const { get, post } = useFetch();
+  const { get, post, del, loading } = useFetch();
   const [comment1, setComment] = useState<CommentModel>(comment);
   const [isLiking, setIsLiking] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
-  
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);  
+  const [editImage, setEditImage] = useState<File | null>(null); 
+  const [editImagePreview, setEditImagePreview] = useState(comment.imageUrl || ""); 
+  const [editContent, setEditContent] = useState<string>(comment.content || "");
+
+
   const handleReplySubmit = async (e: React.FormEvent, parentId: string) => {
     e.preventDefault();
   
@@ -150,33 +157,55 @@ const CommentItem = ({
   };
   const toggleMenu = () => setMenuVisible((prev) => !prev);
 
-  const handleDelete = async (commentId: string) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa bình luận này?')) return;
-
+  const handleDelete = async () => {
     try {
-      const response = await fetch(`${remoteUrl}/v1/comment/delete/${commentId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('API Error:', errorData);
-        throw new Error(errorData.message || 'Không thể xóa bình luận!');
-      }
-
-      alert('Xóa bình luận thành công!');
-    } catch (error) {
-      console.error('Lỗi khi xóa bình luận:', error);
-      alert('Đã xảy ra lỗi khi xóa bình luận. Vui lòng thử lại.');
+      setShowConfirm(false); // Ẩn pop-up xác nhận
+      await del(`/v1/comment/delete/${comment._id}`); // Gọi API DELETE
+      toast.success("Xóa bình luận thành công!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Không thể xóa bình luận. Vui lòng thử lại!");
     }
   };
+  
 
-  const handleEdit = () => {
-    // Logic xử lý chỉnh sửa (hiển thị form hoặc điều hướng)
-    alert('Chức năng chỉnh sửa đang được phát triển!');
+  const handleUpdateComment = async () => {
+    try {
+      let imageUrl = editImagePreview;
+  
+      // Nếu có ảnh mới, upload và lấy URL
+      if (editImage) {
+        imageUrl = await uploadImage(editImage, post);
+      }
+  
+      // Gửi request cập nhật bình luận
+      const response = await fetch(`${remoteUrl}/v1/comment/update`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+        },
+        body: JSON.stringify({
+          id: comment._id,
+          content: editContent.trim(),
+          imageUrl,
+        }),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Không thể cập nhật bình luận!");
+      }
+  
+      // Cập nhật thành công
+      const updatedComment = await response.json();
+      setComment((prev) => ({ ...prev, ...updatedComment })); // Cập nhật state của comment
+      toast.success("Cập nhật bình luận thành công!");
+      setIsEditing(false); // Ẩn form chỉnh sửa
+    } catch (err) {
+      console.error(err);
+      toast.error("Không thể cập nhật bình luận. Vui lòng thử lại!");
+    }
   };
 
   return (
@@ -273,7 +302,7 @@ const CommentItem = ({
       {menuVisible && (
         <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
           <button
-            onClick={handleEdit}
+            onClick={() => setIsEditing(true)}
             className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 border-b border-gray-100"
           >
             <svg
@@ -292,8 +321,10 @@ const CommentItem = ({
             </svg>
             Chỉnh sửa
           </button>
+
           <button
-            onClick={() => handleDelete(comment._id)}
+            onClick={() => setShowConfirm(true)} // Hiển thị pop-up xác nhận
+            disabled={loading}
             className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
           >
             <svg
@@ -314,9 +345,117 @@ const CommentItem = ({
           </button>
         </div>
       )}
-      
-      </div>
+          {showConfirm && (
+            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+              <div className="bg-white rounded-lg p-6 w-96 shadow-lg">
+                <h2 className="text-lg font-semibold text-gray-700">
+                  Bạn có chắc chắn muốn xóa bình luận này?
+                </h2>
+                <div className="mt-4 flex justify-end gap-2">
+                  <button
+                    onClick={handleDelete} // Xác nhận xóa
+                    disabled={loading}
+                    className="px-4 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 disabled:opacity-50"
+                  >
+                    {loading ? "Đang xóa..." : "Xóa"}
+                  </button>
+                  <button
+                    onClick={() => setShowConfirm(false)} // Hủy
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300"
+                  >
+                    Hủy
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          </div>
         )}
+        {isEditing && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+            <div className="bg-white rounded-lg p-6 w-96 shadow-lg">
+              <h2 className="text-lg font-semibold text-gray-700 mb-4">
+                Chỉnh sửa bình luận
+              </h2>
+              <textarea
+                value={editContent || ""}
+                onChange={(e) => setEditContent(e.target.value)}
+                className="w-full px-4 py-2 bg-gray-100 rounded-lg resize-none"
+                rows={4}
+                placeholder="Nhập nội dung mới..."
+              />
+
+              {editImagePreview && (
+                <div className="relative mt-4">
+                  <img
+                    src={editImagePreview}
+                    alt="Preview"
+                    className="rounded-lg max-w-full"
+                  />
+                  <button
+                    onClick={() => {
+                      setEditImage(null);
+                      setEditImagePreview("");
+                    }}
+                    className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full"
+                  >
+                    X
+                  </button>
+                </div>
+              )}
+              <div className="mt-4">
+                <label
+                  htmlFor="edit-image-upload"
+                  className="flex items-center gap-2 cursor-pointer text-blue-500 hover:underline"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4v16m8-8H4"
+                    />
+                  </svg>
+                  <span>Thay đổi hình ảnh</span>
+                </label>
+                <input
+                  id="edit-image-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setEditImage(file);
+                      setEditImagePreview(URL.createObjectURL(file));
+                    }
+                  }}
+                />
+              </div>
+              <div className="mt-6 flex justify-end gap-2">
+                <button
+                  onClick={handleUpdateComment}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                >
+                  Lưu
+                </button>
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                >
+                  Hủy
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Render Child Comments */}
         {!isChild && onLoadMore && (
           <ChildComments

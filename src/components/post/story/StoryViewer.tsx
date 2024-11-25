@@ -1,13 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Pause, Play, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pause, Play, Plus, Trash2 } from 'lucide-react';
 import { StoryModel } from '../../../models/story/StoryModel';
 import { remoteUrl } from '../../../types/constant';
 import { toast } from 'react-toastify';
 import { useLoading } from '../../../hooks/useLoading';
 import { LoadingDialog } from '../../Dialog';
+import CreateStory from './CreateStory';
 
 const StoryViewer = () => {
-  const [stories, setStories] = useState<StoryModel[]>([]);
+  const [stories, setStories] = useState<(StoryModel | { id: string; type: string; displayName: string })[]>([
+    {
+      id: 'create',
+      type: 'create',
+      displayName: 'Tạo tin',
+    },
+  ]);  
   const [isPopupVisible, setIsPopupVisible] = useState(false);
   const [currentStory, setCurrentStory] = useState<StoryModel | null>(null);
   const [progress, setProgress] = useState(0);
@@ -16,9 +23,12 @@ const StoryViewer = () => {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const { isLoading, showLoading, hideLoading } = useLoading();
-  
+  const [isCreateVisible, setCreateVisible] = useState(false);
+
   const storiesPerPage = 4;
   const autoTransitionTime = 5000;
+  const canScrollLeft = startIndex > 0;
+  const canScrollRight = startIndex + storiesPerPage < stories.length;
 
   useEffect(() => {
     fetchInitialStories();
@@ -46,17 +56,22 @@ const StoryViewer = () => {
     try {
       const response = await fetch(`${remoteUrl}/v1/story/list`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-        }
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+        },
       });
       const data = await response.json();
       if (data.result) {
-        setStories(data.data.content);
+        const storiesFromAPI = data.data.content;
+        setStories([
+          { id: 'create', type: 'create', displayName: 'Tạo tin' }, // Luôn thêm phần tử "Tạo tin" ở đầu
+          ...storiesFromAPI,
+        ]);
       }
     } catch (error) {
       toast.error('Không thể tải stories');
     }
   };
+  
 
   const deleteStory = async (storyId: string) => {
     showLoading();
@@ -156,79 +171,106 @@ const StoryViewer = () => {
     }
   };
   
-
-  // const formatCreatedAt = (dateString: string) => {
-  //   const date = new Date(dateString);
-  //   return date.toLocaleTimeString('vi-VN', { 
-  //     hour: '2-digit', 
-  //     minute: '2-digit',
-  //     hour12: false 
-  //   });
-  // };
-
-  const groupedStories = stories.reduce((acc: { [key: string]: StoryModel[] }, story) => {
-    if (!acc[story.user._id]) {
-      acc[story.user._id] = [];
-    }
-    const exists = acc[story.user._id].some(s => s._id === story._id);
-    if (!exists) {
-      acc[story.user._id].push(story);
-    }
-    return acc;
-  }, {});
   
-  const nextStories = () => {
-    const maxStartIndex = Math.max(0, stories.length - storiesPerPage);
-    setStartIndex((prev) => Math.min(prev + 1, maxStartIndex));
+   const nextStories = () => {
+    if (canScrollRight) {
+      setStartIndex(prev => prev + 1);
+    }
   };
 
   const prevStories = () => {
-    setStartIndex((prev) => Math.max(prev - 1, 0)); 
+    if (canScrollLeft) {
+      setStartIndex(prev => prev - 1);
+    }
   };
+  const isCreateType = (
+    story: StoryModel | { id: string; type: string; displayName: string }
+  ): story is { id: string; type: string; displayName: string } => {
+    return 'type' in story;
+  };
+  const handleStoryCreated = () => {
+    fetchInitialStories(); // Làm mới danh sách stories sau khi tạo tin mới
+  };
+  const sortedStories = [
+    ...stories.filter(isCreateType), // Luôn giữ phần tử "Tạo tin" trước
+    ...stories.filter((story) => !isCreateType(story)), // Các story khác
+  ];
+  
+  const visibleStories = sortedStories.slice(startIndex, startIndex + storiesPerPage);
+  
 
-  const visibleStories = stories.slice(startIndex, startIndex + storiesPerPage);
+ 
 
+  
   return (
-    <div className="relative">
-      {/* Stories List */}
-      <div className="flex items-center justify-center space-x-4 p-4 overflow-hidden">
-        {startIndex > 0 && (
+    <div className="relative w-full max-w-6xl mx-auto px-4 py-6">
+      <div className="flex items-center space-x-4 relative">
+        {/* Navigation Buttons */}
+        {canScrollLeft && (
           <button
             onClick={prevStories}
-            className="absolute left-0 top-1/2 transform -translate-y-1/2 p-2 rounded-full bg-gray-300 transition-all duration-300 ease-in-out hover:bg-gray-400 z-10"
+            className="absolute left-0 z-10 p-2 rounded-full bg-white shadow-lg hover:bg-gray-100"
           >
-            <ChevronLeft />
+            <ChevronLeft className="w-6 h-6 text-gray-600" />
           </button>
         )}
 
-        <div className={`flex space-x-4 transition-transform duration-300 ease-in-out ${isTransitioning ? "opacity-0" : "opacity-100"}`}>
-          {visibleStories.map((story) => (
-            <div
-              key={story._id}
-              onClick={() => openStoryViewer(story)}
-              className="w-40 h-80 flex-shrink-0 rounded-lg overflow-hidden cursor-pointer relative"
-            >
+        {/* Stories Grid */}
+        <div className="flex space-x-4 overflow-hidden">
+  {visibleStories.map((story) => (
+    <div key={'id' in story ? story.id : story._id} className="flex-shrink-0 w-32">
+      {isCreateType(story) ? (
+        // Create Story Button
+        <div
+          className="relative h-48 rounded-xl bg-gray-100 flex flex-col items-center justify-between pb-4 cursor-pointer hover:bg-gray-200"
+          onClick={() => setCreateVisible(true)}
+        >
+          <div className="w-full h-36 bg-white rounded-t-xl flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">
+              <Plus className="w-6 h-6 text-white" />
+            </div>
+          </div>
+          <span className="text-sm font-medium text-center">{story.displayName}</span>
+        </div>
+      ) : (
+        // Story Item
+        <div
+          className="relative h-48 rounded-xl overflow-hidden cursor-pointer group"
+          onClick={() => openStoryViewer(story as StoryModel)}
+        >
+          <img
+            src={story.imageUrl || '/placeholder-image.png'}
+            alt={story.user?.displayName || 'Story Image'}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute top-2 left-2">
+            <div className="w-10 h-10 rounded-full border-4 border-blue-500 overflow-hidden">
               <img
-                src={story.imageUrl}
-                alt={story.user.displayName}
+                src={story.user?.avatarUrl || '/default-avatar.png'}
+                alt={story.user?.displayName || 'User Avatar'}
                 className="w-full h-full object-cover"
               />
-              <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black to-transparent">
-                <p className="text-white text-sm">
-                  {story.user.displayName}
-                  <span className="text-xs ml-2">({story.totalStories})</span>
-                </p>
-              </div>
             </div>
-          ))}
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/60 to-transparent">
+            <p className="text-white text-xs font-medium leading-tight">
+              {story.user?.displayName || 'Anonymous'}
+            </p>
+          </div>
         </div>
+      )}
+    </div>
+  ))}
+</div>
 
-        {startIndex + storiesPerPage < stories.length && (
+
+        {/* Next Button */}
+        {canScrollRight && (
           <button
             onClick={nextStories}
-            className="absolute right-0 top-1/2 transform -translate-y-1/2 p-2 rounded-full bg-gray-300 transition-all duration-300 ease-in-out hover:bg-gray-400 z-10"
+            className="absolute right-0 z-10 p-2 rounded-full bg-white shadow-lg hover:bg-gray-100"
           >
-            <ChevronRight />
+            <ChevronRight className="w-6 h-6 text-gray-600" />
           </button>
         )}
       </div>
@@ -363,6 +405,12 @@ const StoryViewer = () => {
           </div>
         </div>
       )}
+      <CreateStory
+        isVisible={isCreateVisible}
+        setVisible={setCreateVisible}
+        profile={null} // Thay bằng thông tin profile nếu cần
+        onButtonClick={handleStoryCreated}
+      />
        <LoadingDialog isVisible={isLoading} />
     </div>
   );
