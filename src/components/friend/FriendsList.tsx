@@ -7,23 +7,31 @@ import { Search, ChevronDown, ChevronUp, MoreVertical, Info, Trash2, UserPlus } 
 import { LoadingDialog } from '../Dialog';
 import useFetch from '../../hooks/useFetch';
 import AddFriend from './AddFriend';
+import ProfileModal from './friendProfile';
+import { FriendModel } from '../../models/friend/friendModel';
+import { Profile } from '../../models/profile/Profile';
+// export interface Friend {
+//   _id: string;
+//   displayName: string;
+//   avatarUrl: string;
+//   lastLogin: string;
+//   status: string;
+//   friend: Profile;  
+// }
 
-interface Friend {
-  _id: string;
-  displayName: string;
-  avatarUrl: string;
-  lastLogin: string;
-}
 
 const FriendsList = () => {
   const { isLoading, showLoading, hideLoading } = useLoading();
-  const [friends, setFriends] = useState<Friend[]>([]);
+  const [friends, setFriends] = useState<FriendModel[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const { get } = useFetch();
   const [isAddFriendOpen, setIsAddFriendOpen] = useState(false);
-
+  const [profileModalVisible, setProfileModalVisible] = useState(false);
+  const [activeSection, setActiveSection] = useState("messages");
+  const [profileData, setProfileData] = useState<Profile | null>(null);
+  
   const defaultAvatar = 'https://via.placeholder.com/150';
 
   useEffect(() => {
@@ -36,19 +44,9 @@ const FriendsList = () => {
       const response = await get(`/v1/friendship/list`, {
         getListKind: 3,
       });
-      console.log("API Response:", response);
       if (response.result) {
         console.log("Content data:", response.data.content);
-        const formattedFriends = response.data.content.map((friendship: any) => {
-          console.log("Processing friendship:", friendship); // Debug từng phần tử
-          return {
-            _id: friendship._id,
-            displayName: friendship.friend?.displayName || 'Unknown',
-            avatarUrl: friendship.friend?.avatarUrl || defaultAvatar,
-            lastLogin: friendship.friend?.lastLogin || 'Chưa đăng nhập',
-          };
-        });
-        console.log("tét friend");
+        const formattedFriends = response.data.content
         setFriends(formattedFriends);
       }
       
@@ -63,36 +61,75 @@ const FriendsList = () => {
 
   const filteredFriends = friends
     .filter((friend) =>
-      friend.displayName.toLowerCase().includes(searchQuery.toLowerCase())
+      friend.friend.displayName.toLowerCase().includes(searchQuery.toLowerCase())
     )
     .sort((a, b) => {
       if (sortOrder === 'asc') {
-        return a.displayName.localeCompare(b.displayName);
+        return a.friend.displayName.localeCompare(b.friend.displayName);
       } else {
-        return b.displayName.localeCompare(a.displayName);
+        return b.friend.displayName.localeCompare(a.friend.displayName);
       }
     });
 
-  const groupedFriends: { [key: string]: Friend[] } = filteredFriends.reduce(
+  const groupedFriends: { [key: string]: FriendModel[] } = filteredFriends.reduce(
     (acc, friend) => {
-      const firstLetter = friend.displayName.charAt(0).toUpperCase() || '#';
+      const firstLetter = friend.friend.displayName.charAt(0).toUpperCase() || '#';
       if (!acc[firstLetter]) {
         acc[firstLetter] = [];
       }
       acc[firstLetter].push(friend);
       return acc;
     },
-    {} as { [key: string]: Friend[] }
+    {} as { [key: string]: FriendModel[] }
   );
   
   const toggleMenu = (friendId: string) => {
     setOpenMenu(openMenu === friendId ? null : friendId);
   };
 
-  const handleViewInfo = (friendId: string) => {
-    console.log('View info of friend:', friendId);
-    setOpenMenu(null);
+  const handleViewInfo = async (friendId: string) => {
+    const selectedFriend = friends.find(friend => friend._id === friendId);
+    showLoading();
+    if (selectedFriend) {
+      try {
+        // Lấy user ID từ friend object
+        const userId = selectedFriend.friend._id;
+        
+        // Gọi API lấy danh sách user để tìm thông tin chi tiết
+        const response = await get('/v1/user/list', {
+          isPaged: 0,
+          //ignoreFriendship: 1
+        });
+        console.log("Full User:", userId);
+        if (response.result) {
+          // Tìm user trong danh sách trả về
+          const userDetails = response.data.content.find((user: any) => user._id === userId);
+          console.log("Full User222:", userDetails);
+          if (userDetails) {
+            // Cập nhật profile data với thông tin chi tiết từ /v1/user/list
+            setProfileModalVisible(true);
+            setProfileData({
+              ...selectedFriend.friend,
+              ...userDetails, // Ghi đè thông tin từ API user list
+            });
+            
+            console.log("Full User Details:", userDetails);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user details:", error);
+        // Nếu lỗi, vẫn hiển thị thông tin ban đầu
+        setProfileModalVisible(true);
+        setProfileData(selectedFriend.friend);
+      }finally {
+        hideLoading();
+      }
+    }
   };
+  
+  
+  
+  
 
   const handleRemoveFriend = async (friendshipId: string) => {
     try {
@@ -124,7 +161,10 @@ const FriendsList = () => {
   const updateFriendsList = async () => {
     await fetchFriends();
   };
-
+  const handleProfileClick = () => {
+    setProfileModalVisible(true);
+    setActiveSection("profile");
+  };
   return (
     <div className="p-4">
       <div className="flex items-center justify-between mb-4">
@@ -178,14 +218,14 @@ const FriendsList = () => {
                 <div key={friend._id} className="flex items-center justify-between mb-4">
                   <div className="flex items-center">
                     <img
-                      src={friend.avatarUrl}
-                      alt={friend.displayName}
+                      src={friend.friend.avatarUrl}
+                      alt={friend.friend.displayName}
                       className="w-12 h-12 rounded-full mr-4"
                     />
                     <div>
-                      <p className="font-semibold">{friend.displayName}</p>
+                      <p className="font-semibold">{friend.friend.displayName}</p>
                       <p className="text-gray-500 text-sm">
-                        Lần đăng nhập cuối: {friend.lastLogin}
+                        Lần đăng nhập cuối: {friend.friend.lastLogin}
                       </p>
                     </div>
                   </div>
@@ -222,6 +262,12 @@ const FriendsList = () => {
       ) : (
         <p className="text-gray-500">Không tìm thấy bạn bè</p>
       )}
+      <ProfileModal
+        isVisible={profileModalVisible}
+        onClose={() => setProfileModalVisible(false)}
+        profileData={profileData} // Pass the profileData here
+      />
+
       <AddFriend
         isOpen={isAddFriendOpen}
         onClose={() => setIsAddFriendOpen(false)}

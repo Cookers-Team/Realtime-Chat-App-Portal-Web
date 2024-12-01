@@ -23,8 +23,10 @@ const PostDetail= ({
   const {profile} = useProfile();
   const [isLoading, setIsLoading] = useState(true);
   const [comments, setComments] = useState<CommentModel[]>([]);
-  const [totalComments, setTotalComments] = useState(postItem.totalComments);
-  const [totalReactions, setTotalReactions] = useState(postItem.totalReactions);
+  // const [totalComments, setTotalComments] = useState(postItem.totalComments);
+  // const [totalReactions, setTotalReactions] = useState(postItem.totalReactions);
+  const [totalComments, setTotalComments] = useState(postItem?.totalComments || 0);
+  const [totalReactions, setTotalReactions] = useState(postItem?.totalReactions || 0);
   useEffect(() => {
    
     const loadPostDetails = async () => {
