@@ -1,55 +1,104 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   CheckIcon,
   BellIcon,
   MailCheckIcon,
   TrashIcon,
   BellOffIcon,
+  EyeIcon,
 } from "lucide-react";
 import useFetch from "../../hooks/useFetch";
 import { ConfimationDialog } from "./Dialog";
 import useDialog from "../../hooks/useDialog";
+import PostDetail from "../post/pages/PostDetail";
+import { PostModel } from "../../models/post/PostModel";
+import { useLoading } from "../../hooks/useLoading";
+
+interface NotificationData {
+  user?: {
+    _id: string;
+    displayName: string;
+    avatarUrl: string;
+  };
+  post?: {
+    _id: string;
+  };
+}
+
+interface Notification {
+  _id: string;
+  message: string;
+  status: 1 | 2; // 1 for unread, 2 for read
+  createdAt: string;
+  data?: NotificationData;
+  kind?: number;
+}
+
+interface NotificationResponse {
+  content: Notification[];
+}
 
 const NotificationPanel = () => {
   const { isDialogVisible, showDialog, hideDialog } = useDialog();
-  const [activeTab, setActiveTab] = useState(1);
-  const [notifications, setNotifications] = useState([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const { get, put, del, loading } = useFetch();
-  const observerTarget = useRef(null);
-  const PAGE_SIZE = 5;
+  const [totalNotifications, setTotalNotifications] = useState();
+  const [showModal, setShowModal] = useState(false);
+  const [postItem, setPostItem] = useState<PostModel| null>(null);
+  const { isLoading, showLoading, hideLoading } = useLoading();
+  const observerTarget = useRef<HTMLDivElement>(null);
+  const [totalPages, setTotalPages] = useState(0);
+  const PAGE_SIZE = 10;
 
-  const fetchNotifications = async (pageNum = 1, reset = false) => {
+  const fetchNotifications = async (pageNumber: number) => {
     try {
       setLoadingMore(true);
-      const res = await get(`/v1/notification/list?page=${pageNum}&size=${PAGE_SIZE}&getMyNotifications=1`);
+      const res = await get('/v1/notification/list', {
+      
+         page: pageNumber,
+          size: PAGE_SIZE
+        
+      });
+      
       const newNotifications = res.data.content;
       
+      // Cập nhật tổng số thông báo
+      setTotalNotifications(res.data.totalElements);
+      setTotalPages(res.data.totalPages);
+      
+      // Nếu là page đầu tiên thì thay thế, ngược lại nối thêm
       setNotifications(prev => 
-        reset ? newNotifications : [...prev, ...newNotifications]
+        pageNumber === 0 
+          ? newNotifications 
+          : [...prev, ...newNotifications]
       );
-      setHasMore(newNotifications.length === PAGE_SIZE);
+      
+      // Kiểm tra xem còn thông báo để load không
+      setHasMore(pageNumber < res.data.totalPages - 1);
       setLoadingMore(false);
     } catch (error) {
       console.error("Error fetching notifications:", error);
       setLoadingMore(false);
+      setHasMore(false);
     }
   };
 
+  // Load notifications lần đầu
   useEffect(() => {
-    fetchNotifications(1, true);
-    setPage(1);
-  }, [activeTab]);
+    fetchNotifications(0);
+  }, []);
 
-  // Intersection Observer setup
+  // Observer để load more
   useEffect(() => {
     const observer = new IntersectionObserver(
       entries => {
         if (entries[0].isIntersecting && hasMore && !loadingMore) {
-          setPage(prev => prev + 1);
-          fetchNotifications(page + 1);
+          const nextPage = page + 1;
+          setPage(nextPage);
+          fetchNotifications(nextPage);
         }
       },
       { threshold: 0.1 }
@@ -60,52 +109,60 @@ const NotificationPanel = () => {
     }
 
     return () => observer.disconnect();
-  }, [hasMore, loadingMore, page]);
+  }, [hasMore, loadingMore, page, totalPages]);
 
   const markAsRead = async (id: string) => {
-    const res = await put(`/v1/notification/read/${id}`);
-    setNotifications(res.data);
+    await put(`/v1/notification/read/${id}`);
+    setNotifications(prevNotifications => 
+      prevNotifications.map(notif => 
+        notif._id === id 
+          ? { ...notif, status: 2 }
+          : notif
+      )
+    );
   };
 
   const markAllAsRead = async () => {
-    const res = await put("/v1/notification/read-all");
-    setNotifications(res.data);
+    await put("/v1/notification/read-all");
+    setNotifications(prevNotifications =>
+      prevNotifications.map(notif => ({
+        ...notif,
+        status: 2
+      }))
+    );
   };
 
   const deleteNotification = async (id: string) => {
-    const res = await del(`/v1/notification/delete/${id}`);
-    setNotifications(res.data);
+    await del(`/v1/notification/delete/${id}`);
+    setNotifications(prev => prev.filter(notif => notif._id !== id));
   };
 
   const deleteAllNotifications = async () => {
-    const res = await del("/v1/notification/delete-all");
-    setNotifications(res.data);
+    await del("/v1/notification/delete-all");
+    setNotifications([]);
     hideDialog();
   };
-
-  const filteredNotifications = activeTab === 3
-    ? notifications
-    : notifications.filter((n: any) => n.status === activeTab);
-
+  const handleViewPost = async (postId: string) => {
+    await getPostDetail(postId);
+    setShowModal(true);
+  };
+  
+  const getPostDetail = async (postId: string) => {
+    try {
+      const response = await get(`/v1/post/get/${postId}`);
+      setPostItem(response.data);
+      console.log("data post", response.data);
+    } catch (error) {
+      console.error('Error refreshing post detail:', error);
+    }
+  };
+  const handleShowModal = () => {
+    setShowModal(true);
+    };
   return (
     <div className="h-full flex flex-col bg-white rounded-lg shadow">
       <div className="p-4 border-b">
         <h2 className="text-lg font-semibold mb-4">Thông báo</h2>
-        <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
-          {[1, 2, 3].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors duration-200 ${
-                activeTab === tab
-                  ? "bg-white text-gray-900 shadow"
-                  : "text-gray-500 hover:text-gray-900"
-              }`}
-            >
-              {tab === 1 ? "Chưa đọc" : tab === 2 ? "Đã đọc" : "Tất cả"}
-            </button>
-          ))}
-        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto">
@@ -113,9 +170,9 @@ const NotificationPanel = () => {
           <div className="flex justify-center items-center h-32">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
           </div>
-        ) : filteredNotifications.length > 0 ? (
+        ) : notifications.length > 0 ? (
           <>
-            {filteredNotifications.map((notification: any) => (
+            {notifications.map((notification) => (
               <div key={notification._id} className="border-b last:border-b-0">
                 <div className="flex items-start p-4 hover:bg-gray-50 transition-colors duration-150">
                   <div className="flex-shrink-0 mr-3 mt-1">
@@ -126,7 +183,7 @@ const NotificationPanel = () => {
                     )}
                   </div>
                   <div className="flex-grow">
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className={`text-sm ${notification.status === 1 ? 'font-bold' : 'font-normal'} text-gray-900`}>
                       {notification.message}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
@@ -142,6 +199,14 @@ const NotificationPanel = () => {
                         <CheckIcon size={16} />
                       </button>
                     )}
+                    {notification.data?.post && (
+                      <button
+                        onClick={() => handleViewPost(notification.data!.post!._id)}
+                        className="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-100 transition-colors duration-200"
+                      >
+                        <EyeIcon size={16} />
+                      </button>
+                    )}
                     <button
                       onClick={() => deleteNotification(notification._id)}
                       className="text-red-600 hover:text-red-800 p-1 rounded-full hover:bg-red-100 transition-colors duration-200"
@@ -152,13 +217,11 @@ const NotificationPanel = () => {
                 </div>
               </div>
             ))}
-            {/* Loading indicator for more content */}
             {loadingMore && (
               <div className="flex justify-center items-center py-4">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
               </div>
             )}
-            {/* Intersection observer target */}
             <div ref={observerTarget} className="h-4" />
           </>
         ) : (
@@ -172,7 +235,7 @@ const NotificationPanel = () => {
       <div className="p-4 border-t bg-gray-50">
         <div className="flex justify-between items-center">
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-            {filteredNotifications.length} thông báo
+            {totalNotifications} thông báo
           </span>
           <div className="space-x-2">
             <button
@@ -190,7 +253,9 @@ const NotificationPanel = () => {
           </div>
         </div>
       </div>
-
+      {showModal && (
+        <PostDetail postItem={postItem} onClose={() => setShowModal(false)} />
+      )}
       <ConfimationDialog
         isVisible={isDialogVisible}
         title="Xóa tất cả thông báo"

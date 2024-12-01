@@ -498,6 +498,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       setIsEditDialogOpen(false);
       onMessageChange();
       onConversationUpdateInfo(conversation);
+      toast.success("Cập nhật thông tin cuộc trò chuyện thành công!");
     } catch (error: any) {
       setError(error.message);
     } finally {
@@ -554,8 +555,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             </div>
             {conversation.totalMembers > 1 && (
               <p
-                className="text-sm text-gray-500 cursor-pointer hover:underline"
-                onClick={handleOpenMemberList}
+                className={`text-sm text-gray-500 ${
+                  conversation.isOwner === 1
+                    ? "cursor-pointer hover:underline"
+                    : ""
+                }`}
+                onClick={
+                  conversation.isOwner === 1 ? handleOpenMemberList : undefined
+                }
               >
                 {conversation.totalMembers} thành viên
               </p>

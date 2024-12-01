@@ -11,5 +11,6 @@ export interface Profile {
   avatarUrl: string;
   status: string;
   secretKey: string;
+  lastLogin:string;
   role: Role;
 }

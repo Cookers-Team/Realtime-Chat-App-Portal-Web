@@ -14,11 +14,14 @@ import {
 import UTELogo from "../assets/ute_logo.png";
 import RegisterPageLogo from "../assets/registerpage.png";
 import { useLoading } from "../hooks/useLoading";
-import { LoadingDialog } from "../components/Dialog";
+import { AlertDialog, LoadingDialog } from "../components/Dialog";
+import { set } from "react-datepicker/dist/date_utils";
 
 const Register = () => {
   const { isLoading, showLoading, hideLoading } = useLoading();
   const navigate = useNavigate();
+  const [error, setError] = useState("");
+  const [isAlertVisible, setIsAlertVisible] = useState(false);
   const [form, setForm] = useState({
     displayName: "",
     email: "",
@@ -123,11 +126,11 @@ const Register = () => {
 
   const handleRegister = async () => {
     if (!validateForm()) {
-      toast.error("Vui lòng điền đầy đủ thông tin");
+      setError("Vui lòng điền đầy đủ thông tin");
       return;
     }
     if (form.password !== form.confirmPassword) {
-      toast.error("Mật khẩu không khớp");
+      setError("Mật khẩu không khớp");
       return;
     }
 
@@ -145,18 +148,15 @@ const Register = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        toast.error(errorData.message);
+        setError(errorData.message);
         return;
       }
-      hideLoading();
-      toast.success("Đăng ký thành công! Hãy xác thực email của bạn.", {
-        onClose: () => {
-          navigate(`/verify?email=${encodeURIComponent(form.email)}`);
-        },
-        autoClose: 2000,
-      });
+
+      setIsAlertVisible(true);
     } catch (error: any) {
-      toast.error(error.message);
+      setError(error.message);
+    } finally {
+      hideLoading();
     }
   };
 
@@ -178,6 +178,11 @@ const Register = () => {
           <h2 className="text-3xl font-bold text-center mb-6">
             Đăng ký tài khoản
           </h2>
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+              {error}
+            </div>
+          )}
           <InputField
             title="Email"
             isRequire={true}
@@ -255,6 +260,15 @@ const Register = () => {
       </div>
       <ToastContainer />
       <LoadingDialog isVisible={isLoading} />
+      <AlertDialog
+        isVisible={isAlertVisible}
+        title="Thông báo"
+        message="Mã OTP đã được gửi đến email của bạn!"
+        onAccept={() => {
+          setIsAlertVisible(false);
+          navigate(`/verify?email=${encodeURIComponent(form.email)}`);
+        }}
+      />
     </div>
   );
 };
