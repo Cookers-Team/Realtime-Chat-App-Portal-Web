@@ -6,7 +6,7 @@ import {
   Friends,
   ChatWindowProps,
   ConversationMembers,
-} from "../../types/chat";
+} from "../../models/profile/chat";
 import UserIcon from "../../assets/user_icon.png";
 import {
   MoreVertical,
@@ -19,6 +19,8 @@ import {
   Heart,
   ImageIcon,
   XIcon,
+  UserRoundMinus,
+  LogOut,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import {
@@ -34,13 +36,17 @@ import EditProfileDialog from "./EditProfilePopup";
 import EditProfilePopup from "./EditProfilePopup";
 import { set } from "react-datepicker/dist/date_utils";
 import { useNavigate } from "react-router-dom";
+import UserInfoPopup from "./UserInfoPopup";
+import { on } from "events";
 
 const ChatWindow: React.FC<ChatWindowProps> = ({
   conversation,
   userCurrent,
   onMessageChange,
   onConversationUpdateInfo,
+  handleLeaveGroupUpdate,
   handleConversationDeleted,
+  onFowardMessage,
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoadingUpdate, setLoadingUpdate] = useState<boolean>(false);
@@ -83,6 +89,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const [isConfirmLeaveDialogOpen, setIsConfirmLeaveDialogOpen] =
+    useState(false);
   // delete member
   const [isMemberListOpen, setIsMemberListOpen] = useState(false);
   const [membersList, setMembersList] = useState<ConversationMembers[]>([]);
@@ -90,6 +98,40 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const [isConfirmDelMemDialogOpen, setIsConfirmDelMemDialogOpen] =
     useState(false);
   const [memberIdSelected, setMemberIdSelected] = useState<string | null>(null);
+
+  const [selectedUser, setSelectedUser] = useState(null);
+
+  const handleAvatarClick = (user: any) => {
+    setSelectedUser(user);
+  };
+
+  const closePopup = () => {
+    setSelectedUser(null);
+  };
+
+  useEffect(() => {
+    const fetchMembersList = async () => {
+      setLoadingMembers(true);
+      try {
+        const response = await get(`/v1/conversation-member/list`, {
+          conversation: conversation._id,
+        });
+
+        if (response?.data?.content) {
+          setMembersList(response.data.content);
+        } else {
+          console.error("Không có dữ liệu thành viên");
+        }
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách thành viên:", error);
+      } finally {
+        setLoadingMembers(false);
+      }
+    };
+    fetchMembersList();
+  }, [conversation._id]);
+
+  console.log("Members list:", membersList);
 
   // Get member list
   const handleOpenMemberList = async () => {
@@ -141,6 +183,21 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     } catch (error) {
       console.error("Lỗi khi giải tán nhóm:", error);
       alert("Đã xảy ra lỗi khi giải tán nhóm. Vui lòng thử lại sau.");
+    } finally {
+      setLoadingUpdate(false);
+    }
+  };
+
+  // Leave group
+  const handleLeaveGroup = async (memberId: string | null) => {
+    setLoadingUpdate(true);
+    try {
+      await del(`/v1/conversation-member/remove/${memberId}`);
+      handleConversationDeleted();
+      setIsManageMembersModalOpen(false);
+      handleLeaveGroupUpdate(conversation);
+    } catch (error) {
+      console.error("Lỗi khi rời nhóm:", error);
     } finally {
       setLoadingUpdate(false);
     }
@@ -527,6 +584,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   };
 
+  const handleAddFriend = (user: any) => {
+    // console.log(`Gửi yêu cầu kết bạn đến: ${user.displayName}`);
+    // setSelectedUser({ ...user, isFriend: true });
+  };
+
+  const handleForwardMessage = (friendObject: Friends) => {
+    onFowardMessage(friendObject.conversation._id);
+  };
+
   return (
     <div className="flex flex-col h-full bg-gray-100">
       <div className="bg-white p-4 border-b shadow-sm flex items-center justify-between">
@@ -560,9 +626,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                     ? "cursor-pointer hover:underline"
                     : ""
                 }`}
-                onClick={
-                  conversation.isOwner === 1 ? handleOpenMemberList : undefined
-                }
+                onClick={handleOpenMemberList}
               >
                 {conversation.totalMembers} thành viên
               </p>
@@ -644,6 +708,25 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               <Settings size={20} />
             </button>
           )}
+
+          {isOwner !== 1 && conversation.kind === 1 && (
+            <button
+              onClick={() => {
+                // Tìm thành viên hiện tại trong membersList và lấy ID
+                const memberToLeave = membersList.find(
+                  (member) => member.user._id === userCurrent?._id
+                );
+                if (memberToLeave) {
+                  // Truyền id của thành viên để rời nhóm
+                  setIsConfirmLeaveDialogOpen(true);
+                  setMemberIdSelected(memberToLeave._id); // Lưu lại id thành viên
+                }
+              }}
+              className="p-2 ml-10 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+            >
+              <LogOut size={20} />
+            </button>
+          )}
         </div>
       </div>
       <div
@@ -675,6 +758,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                     src={message.user.avatarUrl || UserIcon}
                     alt={message.user.displayName}
                     className="w-8 h-8 rounded-full border-4 border-blue-100 shadow-lg"
+                    onClick={() => handleAvatarClick(message.user)}
                   />
                 </div>
               )}
@@ -1039,6 +1123,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         </div>
       )}
 
+      {/* Member List */}
       {isMemberListOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 w-96 max-h-96 overflow-y-auto">
@@ -1057,24 +1142,37 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                         src={member.user.avatarUrl || UserIcon}
                         alt={member.user.displayName}
                         className="w-8 h-8 rounded-full mr-2"
+                        onClick={() => handleAvatarClick(member.user)}
                       />
                       <span className="text-gray-700">
                         {member.user.displayName}
                       </span>
                     </div>
 
-                    {member.isOwner === 1 ? (
-                      <span className="text-sm text-blue-500">Nhóm trưởng</span>
+                    {isOwner === 1 ? (
+                      member.isOwner === 1 ? (
+                        <span className="text-sm text-blue-500">
+                          Nhóm trưởng
+                        </span>
+                      ) : (
+                        membersList.length > 3 && (
+                          <button
+                            onClick={() => {
+                              setIsConfirmDelMemDialogOpen(true);
+                              setMemberIdSelected(member._id);
+                            }}
+                            className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                          >
+                            Xóa
+                          </button>
+                        )
+                      )
                     ) : (
-                      <button
-                        onClick={() => {
-                          setIsConfirmDelMemDialogOpen(true);
-                          setMemberIdSelected(member._id);
-                        }}
-                        className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                      >
-                        Xóa
-                      </button>
+                      member.isOwner === 1 && (
+                        <span className="text-sm text-blue-500">
+                          Nhóm trưởng
+                        </span>
+                      )
                     )}
                   </div>
                 ))}
@@ -1134,11 +1232,30 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         onCancel={() => setIsConfirmDialogOpen(false)}
       />
 
+      <ConfimationDialog
+        isVisible={isConfirmLeaveDialogOpen}
+        title="Xác nhận"
+        color="red"
+        message="Bạn có chắc chắn muốn rời nhóm?"
+        onConfirm={() => {
+          handleLeaveGroup(memberIdSelected);
+          setIsConfirmLeaveDialogOpen(false);
+        }}
+        onCancel={() => setIsConfirmLeaveDialogOpen(false)}
+      />
+
       <EditProfilePopup
         conversation={conversation}
         onUpdate={handleUpdate}
         isVisible={isEditDialogOpen}
         onClose={() => setIsEditDialogOpen(false)}
+      />
+
+      <UserInfoPopup
+        user={selectedUser}
+        onClose={closePopup}
+        onAddFriend={handleAddFriend}
+        onFowardMessage={handleForwardMessage}
       />
 
       <LoadingDialog isVisible={isLoadingUpdate} />

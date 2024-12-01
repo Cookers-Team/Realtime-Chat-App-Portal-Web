@@ -1,5 +1,5 @@
 import React from "react";
-import { Conversation, UserProfile } from "../../types/chat";
+import { Conversation, UserProfile } from "../../models/profile/chat";
 import UserIcon from "../../assets/user_icon.png";
 import { decrypt } from "../../types/utils";
 

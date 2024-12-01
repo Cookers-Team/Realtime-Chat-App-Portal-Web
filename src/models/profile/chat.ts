@@ -49,7 +49,9 @@ interface ChatWindowProps {
   userCurrent: UserProfile | null;
   onMessageChange: () => void;
   onConversationUpdateInfo: (updatedConversation: Conversation) => void;
+  handleLeaveGroupUpdate: (updatedConversation: Conversation) => void;
   handleConversationDeleted: () => void;
+  onFowardMessage: (idConversation: string) => void;
 }
 
 interface ConversationMembers {
@@ -64,6 +66,7 @@ interface ConversationMembers {
 
 interface Friends {
   _id: string;
+  status: number;
   friend: {
     _id: string;
     displayName: string;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { UserProfile } from "../../types/chat";
+import { UserProfile } from "../../models/profile/chat";
 import useFetch from "../../hooks/useFetch";
-import { Friends } from "../../types/chat";
+import { Friends } from "../../models/profile/chat";
 import { AlertDialog, AlertErrorDialog } from "../Dialog";
 import useDialog from "../../hooks/useDialog";
 import { uploadImage } from "../../types/utils";
@@ -22,6 +22,7 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
   const [groupName, setGroupName] = useState("");
   const [friendsList, setFriendsList] = useState<Friends[]>([]);
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [loadingFriends, setLoadingFriends] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const { isDialogVisible, showDialog, hideDialog } = useDialog();
@@ -48,7 +49,7 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
   useEffect(() => {
     const fetchFriends = async () => {
       try {
-        setLoading(true);
+        setLoadingFriends(true);
         const response = await get("/v1/friendship/list", { getListKind: 0 });
         console.log("response get list friends:", response);
         if (response.result) {
@@ -57,7 +58,7 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
       } catch (error) {
         console.error("Lỗi khi lấy danh sách bạn bè:", error);
       } finally {
-        setLoading(false);
+        setLoadingFriends(false);
       }
     };
 
@@ -181,7 +182,7 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
             />
           </div>
 
-          {loading ? (
+          {loadingFriends ? (
             <p>Đang tải danh sách bạn bè...</p>
           ) : (
             <div className="max-h-40 overflow-y-auto">
