@@ -5,7 +5,7 @@ import ChatList from "../components/chat/ChatList";
 import ChatWindow from "../components/chat/ChatWindow";
 import WelcomeIcon from "../assets/welcome.png";
 import useFetch from "../hooks/useFetch";
-import { Conversation, UserProfile } from "../types/chat";
+import { Conversation, UserProfile } from "../models/profile/chat";
 import FriendListItem from "../components/friend/FriendListItem";
 import FriendsList from "../components/friend/FriendsList";
 import GroupList from "../components/friend/GroupList";
@@ -37,8 +37,7 @@ const Home = () => {
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
-  const {profile, setProfile} = useProfile();
-
+  const { profile, setProfile } = useProfile();
 
   const handleConversationUpdate = useCallback(
     async (updatedConversation: Conversation) => {
@@ -53,14 +52,31 @@ const Home = () => {
     []
   );
 
+  const handleLeaveGroup = useCallback(
+    async (updatedConversation: Conversation) => {
+      console.log("Updated conversation object:", updatedConversation);
+      setSelectedConversation(null);
+    },
+    []
+  );
+
+  const handleFowardToConversation = useCallback(
+    async (idConversation: string) => {
+      console.log("id Conversation updated in Home:", idConversation);
+      const response = await get(`/v1/conversation/get/${idConversation}`);
+      const updatedConversationObject = response.data;
+      console.log("Updated conversation object:", updatedConversationObject);
+      setSelectedConversation(updatedConversationObject);
+    },
+    []
+  );
 
   const fetchUserCurrent = useCallback(async () => {
     try {
       const response = await get("/v1/user/profile");
       setUserCurrent(response.data);
-      setProfile(response.data)
+      setProfile(response.data);
       console.log("User ID fetched in Home:", response.data._id);
-      
     } catch (error) {
       console.error("Error getting user id:", error);
     }
@@ -213,7 +229,9 @@ const Home = () => {
               userCurrent={userCurrent}
               onMessageChange={handleMessageChange}
               onConversationUpdateInfo={handleConversationUpdate}
+              handleLeaveGroupUpdate={handleLeaveGroup}
               handleConversationDeleted={handleMessageChange}
+              onFowardMessage={handleFowardToConversation}
             />
           ) : (
             <div className="flex flex-col items-center justify-center h-full space-y-4 bg-gray-100 p-6 rounded-lg shadow-lg">
@@ -242,8 +260,10 @@ const Home = () => {
             <FriendsList />
           )
         ) : selectedSection === "posts" ? (
-           <div className="flex h-full">
-            <div className={`bg-white p-4 ${isLargeScreen ? "w-2/3" : "w-full"}`}>
+          <div className="flex h-full">
+            <div
+              className={`bg-white p-4 ${isLargeScreen ? "w-2/3" : "w-full"}`}
+            >
               {selectedPostSection === "myPosts" ? (
                 <MyPosts />
               ) : selectedPostSection === "friendsPosts" ? (

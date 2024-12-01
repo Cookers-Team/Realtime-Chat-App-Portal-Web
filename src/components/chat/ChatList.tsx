@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import ChatItem from "./ChatItem";
-import { Conversation, UserProfile } from "../../types/chat";
+import { Conversation, UserProfile } from "../../models/profile/chat";
 import { Search, PlusCircle, Users } from "lucide-react";
 import CreateGroupModal from "./CreateGroupModal";
 

@@ -6,6 +6,8 @@ export interface Profile {
   email: string;
   password: string;
   birthDate: string;
+  phone: string;
+  studentId: string;
   otp: string;
   bio: string;
   avatarUrl: string;

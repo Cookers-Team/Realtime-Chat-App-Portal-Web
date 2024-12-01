@@ -3,7 +3,7 @@ import { Search, X } from "lucide-react";
 import UserIcon from "../../assets/user_icon.png";
 import useFetch from "../../hooks/useFetch";
 import { decrypt } from "../../types/utils";
-import { Message, UserProfile } from "../../types/chat";
+import { Message, UserProfile } from "../../models/profile/chat";
 
 const MessageSearch = ({
   conversation,
