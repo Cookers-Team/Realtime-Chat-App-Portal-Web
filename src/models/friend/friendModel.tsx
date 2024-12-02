@@ -4,4 +4,5 @@ export interface FriendModel {
   _id: string
   status: number,
   friend: Profile,
+  isFollowed: number,
 }

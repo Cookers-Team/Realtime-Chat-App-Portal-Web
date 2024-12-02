@@ -9,59 +9,65 @@ import { Search } from 'lucide-react';
 import { LoadingDialog } from '../../Dialog';
 import { PostModel } from '../../../models/post/PostModel';
 import useFetch from '../../../hooks/useFetch';
+import { FriendModel } from '../../../models/friend/friendModel';
 
 const FriendsPosts = () => {
   const [posts, setPosts] = useState<PostModel[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const { isLoading, showLoading, hideLoading } = useLoading();
-  const [hasMore, setHasMore] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [friends, setFriends] = useState<FriendModel[]>([]);
+  const { get, loading } = useFetch();
 
-  const {get, loading} = useFetch();
-
-  const itemsPerPage = 10;
   useEffect(() => {
-    fetchPosts(0);
-  }, []);
+    fetchFriends();
+  }, []);  // Chỉ gọi fetchFriends một lần khi component mount
 
-  const fetchPosts = async (pageNumber: number) => {
+  useEffect(() => {
+    if (friends.length > 0) {  // Kiểm tra nếu đã có bạn bè
+      fetchPosts();
+    }
+  }, [friends]);  // Khi friends thay đổi, gọi fetchPosts
 
+  const fetchPosts = async () => {
     try {
       const response = await get(`/v1/post/list`, {
-        page: pageNumber,
-        size: itemsPerPage,
+        isPaged: 0,
         ignoreFriendship: 1,
         status: 2,
         getListkind: 2,
-        
       });
       const data = response.data.content;
+      console.log("post", data);
 
-      if (pageNumber === 0) {
-        setPosts(data);
-      } else {
-        setPosts((prevPosts) => [...prevPosts, ...data]);
-      }
-  
-      setHasMore(data.length > 0);
+      // Lọc bài post của những người bạn đã follow
+      const filteredPosts = data.filter((post: any) => {
+        return friends.some((friend: any) => friend.friend._id === post.user._id);
+      });
+
+      console.log("post follow", filteredPosts);
+      setPosts(filteredPosts);
     } catch (error: any) {
-      console.error("Lỗi chi tiết:", error); 
-      
-    } finally {
-      setIsLoadingMore(false);
+      console.error("Lỗi chi tiết:", error);
+    }
+  };
+
+  const fetchFriends = async () => {
+    try {
+      const response = await get(`/v1/friendship/list`);
+      const data = response.data.content.filter((friend: any) => friend.isFollowed === 1); // Lọc bạn bè có isFollowed = 1
+      setFriends(data);
+      console.log("friend follow", data);
+    } catch (error: any) {
+      console.error("Lỗi chi tiết:", error);
     }
   };
 
   const handleDeletePost = async (postId: string) => {
-    // Add delete functionality here
-    // After successful deletion, refresh the posts
-    fetchPosts(0);
+    fetchPosts(); // Tải lại danh sách bài viết
   };
 
   const handleEditPost = async (postId: string) => {
-    // Add edit functionality here
-    // After successful edit, refresh the posts
-    fetchPosts(0);
+    fetchPosts(); // Tải lại danh sách bài viết
   };
 
   const filteredPosts = posts.filter((post) =>
@@ -97,11 +103,10 @@ const FriendsPosts = () => {
                 postItem={post}
                 onEdit={() => handleEditPost(post._id)}
                 onDelete={() => handleDeletePost(post._id)}
-               // isPost={2}
               />
             ))
           ) : (
-            <p className="text-center text-gray-500">Không có bài viết nào từ bạn bè.</p>
+            <p className="text-center text-gray-500">Không có bài viết nào từ bạn bè. HÃY KẾT BẠN VÀ FOLLOW HỌ ĐỂ XEM THÊM NHỮNG BÀI ĐĂNG MỚI NHẤT TỪ HỌ.</p>
           )}
         </div>
       </div>

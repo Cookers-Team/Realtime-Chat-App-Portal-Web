@@ -26,7 +26,7 @@ const FriendsList = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [openMenu, setOpenMenu] = useState<string | null>(null);
-  const { get } = useFetch();
+  const { get,put } = useFetch();
   const [isAddFriendOpen, setIsAddFriendOpen] = useState(false);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [activeSection, setActiveSection] = useState("messages");
@@ -165,6 +165,25 @@ const FriendsList = () => {
     setProfileModalVisible(true);
     setActiveSection("profile");
   };
+  const handleFollowToggle = async (friendshipId: string, isFollowed: number) => {
+    showLoading();
+    try {
+      // Gửi API với friendshipId
+      const response = await put('/v1/friendship/follow', {
+        friendship: friendshipId, // Truyền friendshipId thay vì friendId
+      });
+  
+      if (response.result) {
+        toast.success(isFollowed === 0 ? 'Đã follow' : 'Đã unfollow');
+        fetchFriends(); // Reload friends list
+      }
+    } catch (error) {
+      toast.error('Có lỗi khi thực hiện hành động');
+    } finally {
+      hideLoading();
+    }
+  };
+  
   return (
     <div className="p-4">
       <div className="flex items-center justify-between mb-4">
@@ -229,7 +248,16 @@ const FriendsList = () => {
                       </p>
                     </div>
                   </div>
+                  
                   <div className="relative">
+                  <button
+                    onClick={() => handleFollowToggle(friend._id, friend.isFollowed)}
+                    className={`ml-4 px-4 py-2 rounded-md ${
+                      friend.isFollowed === 0 ? 'bg-blue-500 text-white' : 'bg-gray-500 text-white'
+                    }`}
+                  >
+                    {friend.isFollowed === 0 ? 'Follow' : 'Unfollow'}
+                  </button>
                     <button
                       onClick={() => toggleMenu(friend._id)}
                       className="p-1 rounded-full hover:bg-gray-200 focus:outline-none"
@@ -255,6 +283,7 @@ const FriendsList = () => {
                       </div>
                     )}
                   </div>
+                  
                 </div>
               ))}
             </div>
