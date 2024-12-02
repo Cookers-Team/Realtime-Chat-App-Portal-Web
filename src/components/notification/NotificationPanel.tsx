@@ -15,7 +15,7 @@ import { PostModel } from "../../models/post/PostModel";
 import { useLoading } from "../../hooks/useLoading";
 import { useProfile } from "../../types/UserContext";
 import { remoteUrl } from "../../types/constant";
-
+import useSocketNotification from "../../hooks/useSocketNotification";
 
 interface NotificationData {
   user?: {
@@ -68,19 +68,19 @@ const NotificationPanel = () => {
       });
       
       const newNotifications = res.data.content;
-      
-      // Cập nhật tổng số thông báo
+      console.log("data noti", newNotifications)
+
       setTotalNotifications(res.data.totalElements);
       setTotalPages(res.data.totalPages);
       
-      // Nếu là page đầu tiên thì thay thế, ngược lại nối thêm
+
       setNotifications(prev => 
         pageNumber === 0 
           ? newNotifications 
           : [...prev, ...newNotifications]
       );
       
-      // Kiểm tra xem còn thông báo để load không
+
       setHasMore(pageNumber < res.data.totalPages - 1);
       setLoadingMore(false);
     } catch (error) {
@@ -90,12 +90,11 @@ const NotificationPanel = () => {
     }
   },[get]);
 
-  // Load notifications lần đầu
+
   useEffect(() => {
     fetchNotifications(0);
   }, []);
 
-  // Observer để load more
   useEffect(() => {
     const observer = new IntersectionObserver(
       entries => {
@@ -163,7 +162,16 @@ const NotificationPanel = () => {
   const handleShowModal = () => {
     setShowModal(true);
     };
+  const handleNewNotification = useCallback(() => {
+      fetchNotifications(0);
+    }, [fetchNotifications]);
+  
+  useSocketNotification({
+    userId: profile?._id,
+    remoteUrl,
+    onNewNotification: handleNewNotification,
 
+  })
   return (
     <div className="h-full flex flex-col bg-white rounded-lg shadow">
       <div className="p-4 border-b">
