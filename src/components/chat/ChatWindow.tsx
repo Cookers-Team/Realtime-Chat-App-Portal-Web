@@ -38,6 +38,7 @@ import { set } from "react-datepicker/dist/date_utils";
 import { useNavigate } from "react-router-dom";
 import UserInfoPopup from "./UserInfoPopup";
 import { on } from "events";
+import { useProfile } from "../../types/UserContext";
 
 const ChatWindow: React.FC<ChatWindowProps> = ({
   conversation,
@@ -100,6 +101,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const [memberIdSelected, setMemberIdSelected] = useState<string | null>(null);
 
   const [selectedUser, setSelectedUser] = useState(null);
+  const { profile } = useProfile();
 
   const handleAvatarClick = (user: any) => {
     setSelectedUser(user);
@@ -1146,9 +1148,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                       />
                       <span className="text-gray-700">
                         {member.user.displayName}
+                        {member.user._id === profile?._id && (
+                    <span className="ml-2 text-sm text-gray-500">(Tôi)</span>
+                  )}
                       </span>
                     </div>
-
+                  
                     {isOwner === 1 ? (
                       member.isOwner === 1 ? (
                         <span className="text-sm text-blue-500">

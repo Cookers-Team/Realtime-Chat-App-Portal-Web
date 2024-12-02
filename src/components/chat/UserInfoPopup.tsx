@@ -3,55 +3,263 @@ import { User, Mail, Phone, Calendar, Info, Briefcase, X } from "lucide-react";
 import { Friends } from "../../models/profile/chat";
 import useFetch from "../../hooks/useFetch";
 import UserIcon from "../../assets/user_icon.png";
+import { useProfile } from "../../types/UserContext"; 
 
 const UserInfoPopup = ({
   user,
   onClose,
   onAddFriend,
+  onCancelFriendRequest,
+  onAcceptFriendRequest: parentAcceptCallback,
+  onRejectFriendRequest,
   onFowardMessage,
 }: any) => {
   if (!user) return null;
 
-  console.log("user:", user);
-
-  const { get } = useFetch();
+  const { get, post, put } = useFetch();
+  const { profile } = useProfile();
 
   const [isLoading, setIsLoading] = useState(true);
-  const [isFriend, setIsFriend] = useState(false);
-  const [friendObject, setFriendObject] = useState<Friends | null>(null);
+  const [friendshipStatus, setFriendshipStatus] = useState({
+    isFriend: false,
+    isPendingSender: false,
+    isPendingReceiver: false,
+    isRequestSender: false,
+    isRequestReceiver: false,
+    friendObject: null as Friends | null,
+  });
 
   useEffect(() => {
-    const fetchFriends = async () => {
+    const fetchFriendshipStatus = async () => {
       setIsLoading(true);
       try {
-        const response = await get("/v1/friendship/list", { getListKind: 0 });
-        console.log("response get list friends:", response);
-        if (response.result && Array.isArray(response.data.content)) {
-          setIsFriend(
-            response.data.content.some(
-              (friend: any) =>
-                friend.friend._id === user._id && friend.status === 2
-            )
+        // Fetch friends list (kind 0 - existing friends)
+        const friendsResponse = await get("/v1/friendship/list", { getListKind: 0 });
+        
+        // Check if user is an existing friend
+        const existingFriend = friendsResponse.result && 
+          friendsResponse.data.content.find(
+            (friend: any) => friend.friend._id === user._id && friend.status === 2
           );
-          setFriendObject(
-            response.data.content.find(
-              (friend: any) =>
-                friend.friend._id === user._id && friend.status === 2
-            )
+
+        if (existingFriend) {
+          setFriendshipStatus({
+            isFriend: true,
+            isPendingSender: false,
+            isPendingReceiver: false,
+            isRequestSender: false,
+            isRequestReceiver: false,
+            friendObject: existingFriend
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        // Fetch pending friend requests (kind 1)
+        const pendingResponse = await get("/v1/friendship/list", { getListKind: 1 });
+        
+        // Check if user is in pending requests
+        const pendingRequest = pendingResponse.result && 
+          pendingResponse.data.content.find(
+            (request: any) => 
+              request.sender._id === user._id || 
+              request.receiver._id === user._id
           );
+
+        if (pendingRequest) {
+          setFriendshipStatus({
+            isFriend: false,
+            isPendingSender: pendingRequest.sender._id === user._id,
+            isPendingReceiver: pendingRequest.receiver._id === user._id,
+            isRequestSender: false,
+            isRequestReceiver: false,
+            friendObject: pendingRequest
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        // Fetch sent friend requests (kind 2)
+        const sentRequestsResponse = await get("/v1/friendship/list", { getListKind: 2 });
+        
+        // Check if user is in sent requests
+        const sentRequest = sentRequestsResponse.result && 
+          sentRequestsResponse.data.content.find(
+            (request: any) => 
+              request.sender._id === user._id || 
+              request.receiver._id === user._id
+          );
+
+        if (sentRequest) {
+          setFriendshipStatus({
+            isFriend: false,
+            isPendingSender: false,
+            isPendingReceiver: false,
+            isRequestSender: sentRequest.sender._id === profile?._id,
+            isRequestReceiver: sentRequest.receiver._id === profile?._id,
+            friendObject: sentRequest
+          });
+        } else {
+          // No friendship exists
+          setFriendshipStatus({
+            isFriend: false,
+            isPendingSender: false,
+            isPendingReceiver: false,
+            isRequestSender: false,
+            isRequestReceiver: false,
+            friendObject: null
+          });
         }
       } catch (error) {
-        console.error("Lỗi khi lấy danh sách bạn bè:", error);
+        console.error("Error fetching friendship status:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchFriends();
-  }, []);
+    fetchFriendshipStatus();
+  }, [user._id, profile?._id]);
 
-  console.log("isFriend:", isFriend);
-  console.log("friendObject:", friendObject);
+  const handleSendFriendRequest = async () => {
+    try {
+      const response = await post("/v1/friendship/send", {
+        user: user._id,
+      });
+
+      if (response.result) {
+        setFriendshipStatus({
+          ...friendshipStatus,
+          isRequestSender: true,
+          friendObject: response.data
+        });
+      }
+    } catch (error) {
+      console.error("Error sending friend request:", error);
+    }
+  };
+
+  const handleAcceptFriendRequest = async () => {
+    if (!friendshipStatus.friendObject) return;
+
+    try {
+      const response = await put("/v1/friendship/accept", {
+        friendship: friendshipStatus.friendObject._id
+      });
+
+      if (response.result) {
+        setFriendshipStatus({
+          isFriend: true,
+          isPendingSender: false,
+          isPendingReceiver: false,
+          isRequestSender: false,
+          isRequestReceiver: false,
+          friendObject: response.data
+        });
+
+        if (parentAcceptCallback) {
+          parentAcceptCallback(user);
+        }
+      }
+    } catch (error) {
+      console.error("Error accepting friend request:", error);
+    }
+  };
+
+  const handleRejectFriendRequest = async () => {
+    if (!friendshipStatus.friendObject) return;
+
+    try {
+      const response = await put("/v1/friendship/reject", {
+        friendship: friendshipStatus.friendObject._id
+      });
+
+      if (response.result) {
+        setFriendshipStatus({
+          isFriend: false,
+          isPendingSender: false,
+          isPendingReceiver: false,
+          isRequestSender: false,
+          isRequestReceiver: false,
+          friendObject: null
+        });
+      }
+    } catch (error) {
+      console.error("Error rejecting friend request:", error);
+    }
+  };
+
+  const renderFriendshipButton = () => {
+    if (user._id === profile?._id) {
+      return null;
+    }
+
+    if (isLoading) {
+      return (
+        <button
+          className="bg-gray-400 text-white px-6 py-2 rounded-full shadow-md cursor-not-allowed"
+          disabled
+        >
+          Đang tải...
+        </button>
+      );
+    }
+
+    const { isFriend, isPendingSender, isPendingReceiver, isRequestSender, isRequestReceiver } = friendshipStatus;
+
+    if (isFriend) {
+      return (
+        <button
+          className="bg-blue-100 text-blue-700 px-6 py-2 rounded-full shadow-md hover:bg-blue-200 transition-colors"
+          onClick={() => onFowardMessage(friendshipStatus.friendObject)}
+        >
+          Nhắn tin
+        </button>
+      );
+    }
+
+    if (isPendingSender || isPendingReceiver) {
+      return (
+        <div className="flex space-x-2">
+          <button
+            className="bg-green-500 text-white px-6 py-2 rounded-full shadow-md hover:bg-green-600 transition-colors"
+            onClick={handleAcceptFriendRequest}
+          >
+            Chấp nhận
+          </button>
+          <button
+            className="bg-red-100 text-red-700 px-6 py-2 rounded-full shadow-md hover:bg-red-200 transition-colors"
+            onClick={handleRejectFriendRequest}
+          >
+            Từ chối
+          </button>
+        </div>
+      );
+    }
+
+    if (isRequestSender) {
+      return (
+        <button
+          className="bg-red-100 text-red-700 px-6 py-2 rounded-full shadow-md hover:bg-red-200 transition-colors"
+          onClick={handleRejectFriendRequest}
+        >
+          Thu hồi lời mời
+        </button>
+      );
+    }
+
+    // Default state - No friendship
+    return (
+      <button
+        className="bg-blue-500 text-white px-6 py-2 rounded-full shadow-md hover:bg-blue-600 transition-colors"
+        onClick={handleSendFriendRequest}
+      >
+        Kết bạn
+      </button>
+    );
+  };
+
+
+  // Rest of the component remains the same...
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md relative overflow-hidden">
@@ -116,28 +324,7 @@ const UserInfoPopup = ({
         </div>
 
         <div className="flex justify-center space-x-4 mt-6 mb-6 px-6">
-          {isLoading ? (
-            <button
-              className="bg-gray-400 text-white px-6 py-2 rounded-full shadow-md cursor-not-allowed"
-              disabled
-            >
-              Đang tải...
-            </button>
-          ) : isFriend ? (
-            <button
-              className="bg-blue-100 text-blue-700 px-6 py-2 rounded-full shadow-md hover:bg-blue-200 transition-colors"
-              onClick={() => onFowardMessage(friendObject)} // Truyền toàn bộ đối tượng friend vào
-            >
-              Nhắn tin
-            </button>
-          ) : (
-            <button
-              className="bg-blue-500 text-white px-6 py-2 rounded-full shadow-md hover:bg-blue-600 transition-colors"
-              onClick={() => onAddFriend(user)}
-            >
-              Kết bạn
-            </button>
-          )}
+          {renderFriendshipButton()}
         </div>
       </div>
     </div>

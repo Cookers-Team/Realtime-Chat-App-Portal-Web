@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   CheckIcon,
   BellIcon,
@@ -13,6 +13,9 @@ import useDialog from "../../hooks/useDialog";
 import PostDetail from "../post/pages/PostDetail";
 import { PostModel } from "../../models/post/PostModel";
 import { useLoading } from "../../hooks/useLoading";
+import { useProfile } from "../../types/UserContext";
+import { remoteUrl } from "../../types/constant";
+
 
 interface NotificationData {
   user?: {
@@ -51,9 +54,10 @@ const NotificationPanel = () => {
   const { isLoading, showLoading, hideLoading } = useLoading();
   const observerTarget = useRef<HTMLDivElement>(null);
   const [totalPages, setTotalPages] = useState(0);
+  const { profile } = useProfile();
   const PAGE_SIZE = 10;
 
-  const fetchNotifications = async (pageNumber: number) => {
+  const fetchNotifications = useCallback( async (pageNumber: number) => {
     try {
       setLoadingMore(true);
       const res = await get('/v1/notification/list', {
@@ -84,7 +88,7 @@ const NotificationPanel = () => {
       setLoadingMore(false);
       setHasMore(false);
     }
-  };
+  },[get]);
 
   // Load notifications lần đầu
   useEffect(() => {
@@ -159,6 +163,7 @@ const NotificationPanel = () => {
   const handleShowModal = () => {
     setShowModal(true);
     };
+
   return (
     <div className="h-full flex flex-col bg-white rounded-lg shadow">
       <div className="p-4 border-b">
